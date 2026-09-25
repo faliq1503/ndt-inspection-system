@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { Standard, EvaluationResult } from './types'
-import EvaluateForm from './components/EvaluateForm'
-import ResultCard from './components/ResultCard'
+import type { Standard } from './types'
+import InputFlow from './components/InputFlow'
 import ResultsHistory from './components/ResultsHistory'
 
 const API_URL = 'http://localhost:8000'
@@ -12,7 +11,6 @@ function App() {
   const [standards, setStandards] = useState<Standard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<EvaluationResult | null>(null)
   const [tab, setTab] = useState<Tab>('input')
 
   useEffect(() => {
@@ -61,13 +59,7 @@ function App() {
         </p>
       )}
 
-      {!loading && !error && tab === 'input' && (
-        <>
-          <EvaluateForm standards={standards} onResult={setResult} />
-          {result && <ResultCard result={result} />}
-        </>
-      )}
-
+      {!loading && !error && tab === 'input' && <InputFlow standards={standards} />}
       {!loading && !error && tab === 'riwayat' && <ResultsHistory />}
     </div>
   )

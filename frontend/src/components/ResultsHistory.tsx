@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import MappingPage from './MappingPage'
 
 const API_URL = 'http://localhost:8000'
 
@@ -22,6 +23,7 @@ function ResultsHistory() {
   const [data, setData] = useState<RiwayatItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [mappingComponentId, setMappingComponentId] = useState<number | null>(null)
 
   useEffect(() => {
     muatUlang()
@@ -43,6 +45,15 @@ function ResultsHistory() {
         setError(err.message)
         setLoading(false)
       })
+  }
+
+  if (mappingComponentId !== null) {
+    return (
+      <MappingPage
+        componentId={mappingComponentId}
+        onClose={() => setMappingComponentId(null)}
+      />
+    )
   }
 
   return (
@@ -85,7 +96,8 @@ function ResultsHistory() {
                 <th className="py-2 pr-4">Total Unbond</th>
                 <th className="py-2 pr-4">% Unbond</th>
                 <th className="py-2 pr-4">Status</th>
-                <th className="py-2">Laporan</th>
+                <th className="py-2 pr-4">Laporan</th>
+                <th className="py-2">Mapping</th>
               </tr>
             </thead>
             <tbody>
@@ -107,13 +119,21 @@ function ResultsHistory() {
                       {item.status}
                     </span>
                   </td>
-                  <td className="py-2">
+                  <td className="py-2 pr-4">
                     <a
                       href={`${API_URL}/results/${item.id}/report/pdf`}
                       className="text-blue-400 hover:text-blue-300 text-xs underline"
                     >
                       Download PDF
                     </a>
+                  </td>
+                  <td className="py-2">
+                    <button
+                      onClick={() => setMappingComponentId(item.component_id)}
+                      className="text-blue-400 hover:text-blue-300 text-xs underline"
+                    >
+                      Mapping
+                    </button>
                   </td>
                 </tr>
               ))}
