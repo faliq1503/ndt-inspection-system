@@ -1,1 +1,36 @@
 @import "tailwindcss";
+
+/*
+ * NDT Inspection System — design tokens (spec §4-5).
+ * Industrial + Technical + Clean. Desktop-first, tanpa gradient berlebihan.
+ */
+:root {
+  --ndt-primary: #0072ce;
+  --ndt-primary-dark: #005b9a;
+  --ndt-primary-light: #e8f4fc;
+  --ndt-accent: #ffd100;
+  --ndt-background: #f5f7fa;
+  --ndt-surface: #ffffff;
+  --ndt-border: #e2e8f0;
+  --ndt-text: #172033;
+  --ndt-text-secondary: #64748b;
+  --ndt-success: #16a34a;
+  --ndt-danger: #dc2626;
+  --ndt-warning: #f59e0b;
+  --ndt-info: #0284c7;
+}
+
+html,
+body {
+  background: var(--ndt-background);
+  color: var(--ndt-text);
+  font-family:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 14px;
+}
+
+/* Fokus keyboard yang terlihat (aksesibilitas, spec §28) */
+:focus-visible {
+  outline: 2px solid var(--ndt-primary);
+  outline-offset: 2px;
+}
