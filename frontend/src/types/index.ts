@@ -91,6 +91,16 @@ export interface ResultRow extends EvaluationResult {
   zona: string;
 }
 
+export type UserRole = 'admin' | 'staff';
+
 export interface AuthUser {
+  id: number;
   username: string;
+  role: UserRole;
+  aktif: boolean;
+}
+
+/** backend: GET /users (khusus admin) */
+export interface ManagedUser extends AuthUser {
+  dibuat_pada: string;
 }

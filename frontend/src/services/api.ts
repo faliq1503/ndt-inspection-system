@@ -8,6 +8,14 @@
 export const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
 
+export const TOKEN_KEY = 'ndt_auth_token';
+export const USER_KEY = 'ndt_auth_user';
+
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -18,6 +26,12 @@ export class ApiError extends Error {
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
+    if (res.status === 401 && localStorage.getItem(TOKEN_KEY)) {
+      // Sesi berakhir atau tidak valid: bersihkan dan kembali ke halaman login
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      window.location.href = '/login';
+    }
     let detail = `Request gagal (status ${res.status})`;
     try {
       const body = (await res.json()) as { detail?: string };
@@ -34,14 +48,14 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`);
+  const res = await fetch(`${API_URL}${path}`, { headers: authHeaders() });
   return handleResponse<T>(res);
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   return handleResponse<T>(res);
@@ -59,6 +73,6 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
 export async function apiUpload<T>(path: string, file: File): Promise<T> {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${API_URL}${path}`, { method: 'POST', body: form });
+  const res = await fetch(`${API_URL}${path}`, { method: 'POST', body: form, headers: authHeaders() });
   return handleResponse<T>(res);
 }

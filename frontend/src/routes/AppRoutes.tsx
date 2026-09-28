@@ -5,6 +5,7 @@ import DashboardPage from '../pages/DashboardPage';
 import DetailPage from '../pages/DetailPage';
 import HistoryPage from '../pages/HistoryPage';
 import LoginPage from '../pages/LoginPage';
+import ManageUsersPage from '../pages/ManageUsersPage';
 import NewInspectionPage from '../pages/NewInspectionPage';
 import { useAppSelector } from '../store/hooks';
 
@@ -12,6 +13,13 @@ import { useAppSelector } from '../store/hooks';
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+/** Route khusus admin. Staff yang membuka URL-nya langsung dikembalikan ke dashboard. */
+function AdminRoute({ children }: { children: ReactNode }) {
+  const user = useAppSelector((s) => s.auth.user);
+  if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -56,6 +64,18 @@ export default function AppRoutes() {
             <AppLayout>
               <DetailPage />
             </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AppLayout>
+                <ManageUsersPage />
+              </AppLayout>
+            </AdminRoute>
           </ProtectedRoute>
         }
       />

@@ -18,6 +18,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
+from api.auth import router as auth_router
 
 from core.evaluation import evaluasi_komponen
 from core.models import Standard
@@ -48,6 +49,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(auth_router)
 
 IMAGES_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
@@ -57,6 +59,7 @@ app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
 @app.on_event("startup")
 def startup():
     init_db()
+
 
 
 # ---------------------------------------------------------------------

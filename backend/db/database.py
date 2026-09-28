@@ -109,6 +109,7 @@ def init_db():
 
     conn.commit()
     conn.close()
+    init_users_table()
 
 
 # ---------------------------------------------------------------------
@@ -308,6 +309,81 @@ def ambil_hasil_by_id(result_id: int):
     conn.close()
     return dict(row) if row else None
 
+# =======================================================================
+# USERS (akun staff/admin)
+# =======================================================================
+
+def init_users_table():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'staff',
+            aktif INTEGER NOT NULL DEFAULT 1,
+            dibuat_pada TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def tambah_user(username: str, password_hash: str, role: str = "staff") -> int:
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+        (username, password_hash, role),
+    )
+    conn.commit()
+    new_id = cur.lastrowid
+    conn.close()
+    return new_id
+
+
+def ambil_user_by_username(username: str):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE username = ?", (username,))
+    row = cur.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def ambil_user_by_id(user_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    row = cur.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def ambil_semua_user():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, username, role, aktif, dibuat_pada FROM users ORDER BY id")
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+def set_user_aktif(user_id: int, aktif: bool):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET aktif = ? WHERE id = ?", (1 if aktif else 0, user_id))
+    conn.commit()
+    conn.close()
+
+
+def set_user_password(user_id: int, password_hash: str):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user_id))
+    conn.commit()
+    conn.close()
 
 # ---------------------------------------------------------------------
 # Self-test

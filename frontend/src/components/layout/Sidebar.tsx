@@ -8,10 +8,13 @@ const MENU = [
   { to: '/inspection/history', label: 'Inspection History' },
 ];
 
+const ADMIN_MENU = { to: '/admin/users', label: 'Manage User' };
+
 export default function Sidebar() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const user = useAppSelector((s) => s.auth.user);
+  const menu = user?.role === 'admin' ? [...MENU, ADMIN_MENU] : MENU;
 
   function handleLogout() {
     dispatch(logout());
@@ -21,7 +24,7 @@ export default function Sidebar() {
   return (
     <aside className="hidden w-60 shrink-0 flex-col gap-1 rounded-lg border border-[#E2E8F0] bg-white p-3 md:flex">
       <nav className="flex flex-col gap-1" aria-label="Navigasi utama">
-        {MENU.map((m) => (
+        {menu.map((m) => (
           <NavLink
             key={m.to}
             to={m.to}

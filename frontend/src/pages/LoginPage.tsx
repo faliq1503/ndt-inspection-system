@@ -54,7 +54,7 @@ export default function LoginPage() {
           <p className="mb-4 text-sm text-[#64748B]">Masuk untuk mengakses dashboard inspeksi.</p>
           <div className="space-y-3">
             <Input
-              label="Username / Email"
+              label="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="nama.pengguna"
@@ -88,10 +88,6 @@ export default function LoginPage() {
               Login
             </Button>
           </div>
-          <p className="mt-3 text-xs text-[#64748B]">
-            Backend auth belum tersedia — login sementara memakai sesi lokal dan siap
-            diganti API asli tanpa mengubah UI.
-          </p>
         </form>
       </div>
     </div>
