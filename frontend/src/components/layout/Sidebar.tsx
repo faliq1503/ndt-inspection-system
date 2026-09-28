@@ -8,13 +8,16 @@ const MENU = [
   { to: '/inspection/history', label: 'Inspection History' },
 ];
 
-const ADMIN_MENU = { to: '/admin/users', label: 'Manage User' };
+const ADMIN_MENU = [
+  { to: '/admin/standards', label: 'Manage Standard' },
+  { to: '/admin/users', label: 'Manage User' },
+];
 
 export default function Sidebar() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const user = useAppSelector((s) => s.auth.user);
-  const menu = user?.role === 'admin' ? [...MENU, ADMIN_MENU] : MENU;
+  const menu = user?.role === 'admin' ? [...MENU, ...ADMIN_MENU] : MENU;
 
   function handleLogout() {
     dispatch(logout());

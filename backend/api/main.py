@@ -27,6 +27,8 @@ from db.database import (
     init_db,
     tambah_standard,
     update_standard,
+    hapus_standard,
+    hitung_component_pakai_standard,
     ambil_semua_standard,
     tambah_component,
     tambah_indikasi,
@@ -134,6 +136,20 @@ def create_standard(data: StandardIn, _: dict = Depends(require_admin)):
         data.keterangan,
     )
     return {"id": new_id, **data.dict()}
+
+
+@app.delete("/standards/{standard_id}")
+def remove_standard(standard_id: int, _: dict = Depends(require_admin)):
+    if not any(s["id"] == standard_id for s in ambil_semua_standard()):
+        raise HTTPException(status_code=404, detail="Standard tidak ditemukan")
+    jumlah = hitung_component_pakai_standard(standard_id)
+    if jumlah > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Standard ini dipakai oleh {jumlah} inspeksi dan tidak bisa dihapus.",
+        )
+    hapus_standard(standard_id)
+    return {"id": standard_id, "detail": "Standard dihapus"}
 
 
 @app.put("/standards/{standard_id}")

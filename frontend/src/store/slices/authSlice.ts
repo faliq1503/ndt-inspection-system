@@ -10,9 +10,11 @@ interface AuthState {
   error: string | null;
 }
 
+const session = authService.getSession();
+
 const initialState: AuthState = {
-  user: null,
-  isAuthenticated: false,
+  user: session,
+  isAuthenticated: session !== null,
   loading: false,
   error: null,
 };

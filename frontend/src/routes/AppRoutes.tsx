@@ -6,6 +6,7 @@ import DetailPage from '../pages/DetailPage';
 import HistoryPage from '../pages/HistoryPage';
 import LoginPage from '../pages/LoginPage';
 import ManageUsersPage from '../pages/ManageUsersPage';
+import StandardsPage from '../pages/StandardsPage';
 import NewInspectionPage from '../pages/NewInspectionPage';
 import { useAppSelector } from '../store/hooks';
 
@@ -74,6 +75,18 @@ export default function AppRoutes() {
             <AdminRoute>
               <AppLayout>
                 <ManageUsersPage />
+              </AppLayout>
+            </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/standards"
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AppLayout>
+                <StandardsPage />
               </AppLayout>
             </AdminRoute>
           </ProtectedRoute>

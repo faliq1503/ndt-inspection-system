@@ -64,7 +64,7 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
 export async function apiPut<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
   });
   return handleResponse<T>(res);
@@ -83,6 +83,11 @@ export async function apiDownload(path: string, filename: string): Promise<void>
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, { method: 'DELETE', headers: authHeaders() });
+  return handleResponse<T>(res);
 }
 
 export async function apiUpload<T>(path: string, file: File): Promise<T> {

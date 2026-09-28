@@ -179,6 +179,23 @@ def ambil_semua_standard():
     return [dict(row) for row in rows]
 
 
+def hitung_component_pakai_standard(standard_id: int) -> int:
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) AS n FROM component WHERE standard_id = ?", (standard_id,))
+    row = cur.fetchone()
+    conn.close()
+    return row["n"]
+
+
+def hapus_standard(standard_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM standard WHERE id = ?", (standard_id,))
+    conn.commit()
+    conn.close()
+
+
 # ---------------------------------------------------------------------
 # Fungsi dasar untuk Component + Indication
 # ---------------------------------------------------------------------
