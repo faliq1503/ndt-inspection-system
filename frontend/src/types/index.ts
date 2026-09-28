@@ -56,6 +56,7 @@ export interface ComponentDetail {
   standard_id: number;
   tanggal_input: string;
   gambar_path: string | null;
+  inspector: string | null;
   indikasi_list: Indication[];
 }
 
@@ -89,6 +90,7 @@ export interface ResultRow extends EvaluationResult {
   jenis_benda: string;
   diameter_mm: number;
   zona: string;
+  inspector: string | null;
 }
 
 export type UserRole = 'admin' | 'staff';

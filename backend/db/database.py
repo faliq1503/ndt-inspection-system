@@ -45,6 +45,7 @@ def init_db():
             standard_id INTEGER,
             tanggal_input TEXT DEFAULT CURRENT_TIMESTAMP,
             gambar_path TEXT,
+            inspector TEXT,
             FOREIGN KEY (standard_id) REFERENCES standard (id)
         )
     """)
@@ -87,6 +88,7 @@ def init_db():
     # (aman dijalankan berkali-kali, error diabaikan kalau kolom sudah ada)
     migrasi_kolom = [
         ("component", "gambar_path", "TEXT"),
+        ("component", "inspector", "TEXT"),
         ("indication", "zona", "TEXT NOT NULL DEFAULT 'C'"),
         ("standard", "lebar_zona_a_mm", "REAL NOT NULL DEFAULT 25"),
         ("standard", "individu_zona_a_mm", "REAL NOT NULL DEFAULT 12.5"),
@@ -181,12 +183,12 @@ def ambil_semua_standard():
 # Fungsi dasar untuk Component + Indication
 # ---------------------------------------------------------------------
 
-def tambah_component(jenis_benda: str, diameter_mm: float, panjang_l_mm: float, zona: str, standard_id: int) -> int:
+def tambah_component(jenis_benda: str, diameter_mm: float, panjang_l_mm: float, zona: str, standard_id: int, inspector: str = None) -> int:
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO component (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id) VALUES (?, ?, ?, ?, ?)",
-        (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id),
+        "INSERT INTO component (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id, inspector) VALUES (?, ?, ?, ?, ?, ?)",
+        (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id, inspector),
     )
     conn.commit()
     new_id = cur.lastrowid
@@ -286,7 +288,7 @@ def ambil_semua_hasil():
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona
+        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector
         FROM evaluation_result er
         JOIN component c ON er.component_id = c.id
         ORDER BY er.id DESC
@@ -300,7 +302,7 @@ def ambil_hasil_by_id(result_id: int):
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.id as comp_id
+        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.id as comp_id
         FROM evaluation_result er
         JOIN component c ON er.component_id = c.id
         WHERE er.id = ?

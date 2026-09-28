@@ -89,7 +89,7 @@ export default function DetailPage() {
               ['Diameter', `${formatNumber(result.diameter_mm)} mm`],
               ['Zone', result.zona],
               ['Date', formatDate(component?.tanggal_input)],
-              ['Inspector', '— (placeholder, belum ada di backend)'],
+              ['Inspector', result.inspector ?? '-'],
             ] as Array<[string, string]>
           ).map(([k, v]) => (
             <div key={k} className="flex items-center justify-between border-b border-[#E2E8F0] py-1.5">

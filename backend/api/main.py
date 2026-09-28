@@ -12,13 +12,13 @@ import os
 import shutil
 import uuid
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import Depends, FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
-from api.auth import router as auth_router
+from api.auth import get_current_user, router as auth_router
 
 from core.evaluation import evaluasi_komponen
 from core.models import Standard
@@ -137,15 +137,16 @@ def edit_standard(standard_id: int, data: StandardIn):
 # ---------------------------------------------------------------------
 
 @app.post("/components")
-def create_component(data: ComponentIn):
+def create_component(data: ComponentIn, user: dict = Depends(get_current_user)):
     component_id = tambah_component(
         jenis_benda=data.jenis_benda,
         diameter_mm=data.diameter_mm,
         panjang_l_mm=data.panjang_l_mm,
         zona=data.zona,
         standard_id=data.standard_id,
+        inspector=user["username"],
     )
-    return {"id": component_id, **data.dict()}
+    return {"id": component_id, "inspector": user["username"], **data.dict()}
 
 
 @app.get("/components/{component_id}")

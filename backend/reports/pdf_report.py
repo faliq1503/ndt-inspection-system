@@ -58,6 +58,7 @@ def generate_pdf_report(result_id: int, hasil: dict, indikasi_list: list) -> str
         ["Diameter", f'{hasil.get("diameter_mm", "-")} mm'],
         ["Zona", hasil.get("zona", "-")],
         ["ID Hasil", f'#{result_id}'],
+        ["Inspector", hasil.get("inspector") or "-"],
         ["Luas Babbit Total", f'{hasil["a_babbit"]} mm2'],
         ["Luas Zone A", f'{hasil["a_zone_a"]} mm2'],
         ["Luas Zone C", f'{hasil["a_zone_c"]} mm2'],

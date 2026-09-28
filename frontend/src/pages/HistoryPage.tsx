@@ -47,7 +47,8 @@ export default function HistoryPage() {
       return (
         String(r.id).includes(q) ||
         r.jenis_benda.toLowerCase().includes(q) ||
-        r.zona.toLowerCase().includes(q)
+        r.zona.toLowerCase().includes(q) ||
+        (r.inspector ?? '').toLowerCase().includes(q)
       );
     });
   }, [rows, search, filter]);
@@ -70,7 +71,7 @@ export default function HistoryPage() {
           href={inspectionService.excelExportUrl()}
           className="rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm font-medium hover:bg-[#F5F7FA]"
         >
-          Export Excel (backend)
+          Export Excel
         </a>
       </div>
 
@@ -83,7 +84,7 @@ export default function HistoryPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-            placeholder="Search Inspection ID / Component..."
+            placeholder="Search Inspection ID / Component / Inspector..."
           />
         </div>
         <div>
@@ -127,6 +128,7 @@ export default function HistoryPage() {
                   <th className="py-2 pr-4 font-medium">Inspection ID</th>
                   <th className="py-2 pr-4 font-medium">Component</th>
                   <th className="py-2 pr-4 font-medium">Zone</th>
+                  <th className="py-2 pr-4 font-medium">Inspector</th>
                   <th className="py-2 pr-4 font-medium">% Unbound A</th>
                   <th className="py-2 pr-4 font-medium">% Unbound C</th>
                   <th className="py-2 pr-4 font-medium">Result</th>
@@ -139,6 +141,7 @@ export default function HistoryPage() {
                     <td className="py-2 pr-4 font-medium">#{r.id}</td>
                     <td className="py-2 pr-4">{r.jenis_benda}</td>
                     <td className="py-2 pr-4">{r.zona}</td>
+                    <td className="py-2 pr-4">{r.inspector ?? '-'}</td>
                     <td className="py-2 pr-4">{formatNumber(r.persen_unbond_zone_a)} %</td>
                     <td className="py-2 pr-4">{formatNumber(r.persen_unbond_zone_c)} %</td>
                     <td className="py-2 pr-4">

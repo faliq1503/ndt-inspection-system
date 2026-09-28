@@ -25,7 +25,7 @@ def generate_excel_riwayat(data: list) -> str:
         "Luas Babbit (mm2)", "Luas Zone A (mm2)", "Luas Zone C (mm2)",
         "Unbond Zone A (mm2)", "% Unbond Zone A", "Status Zone A",
         "Unbond Zone C (mm2)", "% Unbond Zone C", "Status Zone C",
-        "Status Akhir",
+        "Status Akhir", "Inspector",
     ]
     ws.append(headers)
 
@@ -42,7 +42,7 @@ def generate_excel_riwayat(data: list) -> str:
             row["a_babbit"], row["a_zone_a"], row["a_zone_c"],
             row["a_unbond_zone_a"], row["persen_unbond_zone_a"], row["status_zone_a"],
             row["a_unbond_zone_c"], row["persen_unbond_zone_c"], row["status_zone_c"],
-            row["status"],
+            row["status"], row.get("inspector") or "-",
         ])
 
         for col_idx in (10, 13, 14):  # Status Zone A, Status Zone C, Status Akhir

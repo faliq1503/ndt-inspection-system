@@ -25,6 +25,7 @@ export default function NewInspectionPage() {
   const dispatch = useAppDispatch();
   const form = useAppSelector((s) => s.inspection.form);
   const componentId = useAppSelector((s) => s.inspection.componentId);
+  const user = useAppSelector((s) => s.auth.user);
   const result = useAppSelector((s) => s.inspection.result);
   const indications = useAppSelector((s) => s.indication.items);
   const selectedId = useAppSelector((s) => s.indication.selectedId);
@@ -261,9 +262,9 @@ export default function NewInspectionPage() {
             />
             <Input
               label="Inspector"
-              value={form.inspector}
-              onChange={(e) => dispatch(setForm({ inspector: e.target.value }))}
-              hint="Placeholder — backend belum menyimpan inspector."
+              value={user?.username ?? ''}
+              readOnly
+              hint="Otomatis dari akun yang sedang login."
             />
             <div>
               <label htmlFor="standard" className="mb-1 block text-[13px] font-medium">
