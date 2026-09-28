@@ -6,7 +6,7 @@
  * HANYA berisi endpoint yang benar-benar ada, tanpa asumsi.
  */
 
-import { API_URL, apiGet, apiPost, apiPut, apiUpload } from './api';
+import { API_URL, apiDownload, apiGet, apiPost, apiPut, apiUpload } from './api';
 import type {
   ComponentCreate,
   ComponentDetail,
@@ -76,6 +76,14 @@ export const inspectionService = {
   // --- Riwayat & export ------------------------------------------
   listResults(): Promise<ResultRow[]> {
     return apiGet<ResultRow[]>('/results');
+  },
+
+  downloadReportPdf(resultId: number): Promise<void> {
+    return apiDownload(`/results/${resultId}/report/pdf`, `laporan_ndt_${resultId}.pdf`);
+  },
+
+  downloadExcel(): Promise<void> {
+    return apiDownload('/results/export/excel', 'riwayat_hasil_ndt.xlsx');
   },
 
   reportPdfUrl(resultId: number): string {

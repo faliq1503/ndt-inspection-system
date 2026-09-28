@@ -70,6 +70,21 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
   return handleResponse<T>(res);
 }
 
+/** Unduh file dari endpoint yang butuh login (link <a href> biasa tidak bisa kirim token). */
+export async function apiDownload(path: string, filename: string): Promise<void> {
+  const res = await fetch(`${API_URL}${path}`, { headers: authHeaders() });
+  if (!res.ok) await handleResponse<void>(res); // melempar ApiError
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function apiUpload<T>(path: string, file: File): Promise<T> {
   const form = new FormData();
   form.append('file', file);

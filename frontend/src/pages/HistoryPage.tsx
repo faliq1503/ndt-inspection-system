@@ -67,12 +67,17 @@ export default function HistoryPage() {
           <h1 className="text-2xl font-semibold">Inspection History</h1>
           <p className="text-sm text-[#64748B]">View and manage completed inspections</p>
         </div>
-        <a
-          href={inspectionService.excelExportUrl()}
+        <button
+          type="button"
+          onClick={() =>
+            inspectionService
+              .downloadExcel()
+              .catch((err: unknown) => window.alert(err instanceof Error ? err.message : 'Gagal mengunduh Excel.'))
+          }
           className="rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm font-medium hover:bg-[#F5F7FA]"
         >
           Export Excel
-        </a>
+        </button>
       </div>
 
       <div className="flex flex-col gap-2 rounded-lg border border-[#E2E8F0] bg-white p-4 sm:flex-row">

@@ -71,12 +71,17 @@ export default function DetailPage() {
           </Link>
           <h1 className="mt-1 text-2xl font-semibold">Inspection Detail #{result.id}</h1>
         </div>
-        <a
-          href={inspectionService.reportPdfUrl(result.id)}
+        <button
+          type="button"
+          onClick={() =>
+            inspectionService
+              .downloadReportPdf(result.id)
+              .catch((err: unknown) => window.alert(err instanceof Error ? err.message : 'Gagal mengunduh PDF.'))
+          }
           className="rounded-md bg-[#0072CE] px-4 py-2 text-sm font-medium text-white hover:bg-[#005B9A]"
         >
           Export PDF
-        </a>
+        </button>
       </div>
 
       <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">

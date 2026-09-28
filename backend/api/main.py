@@ -12,13 +12,14 @@ import os
 import shutil
 import uuid
 
-from fastapi import Depends, FastAPI, HTTPException, UploadFile, File
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile, File
+from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
-from api.auth import get_current_user, router as auth_router
+from api.auth import bearer_scheme, get_current_user, require_admin, router as auth_router
 
 from core.evaluation import evaluasi_komponen
 from core.models import Standard
@@ -41,7 +42,20 @@ from db.database import (
 from reports.pdf_report import generate_pdf_report
 from reports.excel_report import generate_excel_riwayat
 
-app = FastAPI(title="NDT Mapping API")
+PUBLIC_PATHS = {"/", "/auth/login"}
+
+
+def enforce_login(
+    request: Request,
+    cred: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+):
+    """Semua endpoint wajib login, kecuali yang ada di PUBLIC_PATHS."""
+    if request.url.path in PUBLIC_PATHS:
+        return
+    get_current_user(cred)
+
+
+app = FastAPI(title="NDT Mapping API", dependencies=[Depends(enforce_login)])
 
 app.add_middleware(
     CORSMiddleware,
@@ -113,7 +127,7 @@ def get_standards():
 
 
 @app.post("/standards")
-def create_standard(data: StandardIn):
+def create_standard(data: StandardIn, _: dict = Depends(require_admin)):
     new_id = tambah_standard(
         data.nama_standard, data.lebar_zona_a_mm, data.toleransi_persen,
         data.individu_zona_a_mm, data.individu_zona_c_persen, data.individu_zona_c_max_mm2,
@@ -123,7 +137,7 @@ def create_standard(data: StandardIn):
 
 
 @app.put("/standards/{standard_id}")
-def edit_standard(standard_id: int, data: StandardIn):
+def edit_standard(standard_id: int, data: StandardIn, _: dict = Depends(require_admin)):
     update_standard(
         standard_id, data.nama_standard, data.lebar_zona_a_mm, data.toleransi_persen,
         data.individu_zona_a_mm, data.individu_zona_c_persen, data.individu_zona_c_max_mm2,
