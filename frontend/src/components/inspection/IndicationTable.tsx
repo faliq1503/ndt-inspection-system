@@ -5,10 +5,15 @@ interface Props {
   items: Indication[];
   selectedId: number | null;
   onSelect: (id: number) => void;
+  onEdit: (ind: Indication) => void;
 }
 
-/** Tabel indikasi: No, X, Y, Length, Width, Area (L×W turunan tampilan). */
-export default function IndicationTable({ items, selectedId, onSelect }: Props) {
+/**
+ * Tabel indikasi. Kolom Area menampilkan properti model backend
+ * (Indication.luas_mm2 = panjang × lebar) — bukan formula baru.
+ * Delete belum tersedia karena backend tidak memiliki endpoint-nya.
+ */
+export default function IndicationTable({ items, selectedId, onSelect, onEdit }: Props) {
   if (items.length === 0) {
     return <p className="py-4 text-center text-sm text-[#64748B]">Belum ada indikasi.</p>;
   }
@@ -23,7 +28,8 @@ export default function IndicationTable({ items, selectedId, onSelect }: Props) 
             <th className="py-2 pr-3 font-medium">Y</th>
             <th className="py-2 pr-3 font-medium">Length (mm)</th>
             <th className="py-2 pr-3 font-medium">Width (mm)</th>
-            <th className="py-2 pr-3 font-medium">Area (mm²)</th>
+            <th className="py-2 pr-3 font-medium">Area (L×W)</th>
+            <th className="py-2 font-medium">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -42,6 +48,18 @@ export default function IndicationTable({ items, selectedId, onSelect }: Props) 
               <td className="py-2 pr-3">{formatNumber(ind.panjang_mm)}</td>
               <td className="py-2 pr-3">{formatNumber(ind.lebar_mm)}</td>
               <td className="py-2 pr-3">{formatNumber(ind.panjang_mm * ind.lebar_mm)}</td>
+              <td className="py-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(ind);
+                  }}
+                  className="font-medium text-[#0072CE] hover:underline"
+                >
+                  Edit
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

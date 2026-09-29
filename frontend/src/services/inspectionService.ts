@@ -68,6 +68,15 @@ export const inspectionService = {
     return apiPut<Indication>(`/indications/${indicationId}/size`, { zona, panjang_mm, lebar_mm });
   },
 
+  /**
+   * Total seluruh indication dari semua inspection (jumlah baris,
+   * bukan luas). Backend: GET /indications/count -> { total_indication }.
+   */
+  async totalIndications(): Promise<number> {
+    const data = await apiGet<{ total_indication: number }>('/indications/count');
+    return data.total_indication;
+  },
+
   // --- Hitung & evaluasi (formula milik backend, bukan frontend) --
   calculate(componentId: number): Promise<EvaluationResult> {
     return apiPost<EvaluationResult>(`/components/${componentId}/calculate`);

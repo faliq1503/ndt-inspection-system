@@ -252,6 +252,21 @@ def ambil_indikasi_by_component(component_id: int):
     return [dict(row) for row in rows]
 
 
+def hitung_total_indikasi() -> int:
+    """
+    Total seluruh indication dari semua inspection.
+
+    Yang dihitung = jumlah baris indication (satu temuan = satu),
+    BUKAN luas indication / unbound area / % unbond.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) AS n FROM indication")
+    row = cur.fetchone()
+    conn.close()
+    return row["n"]
+
+
 def update_posisi_indikasi(indication_id: int, posisi_x: float, posisi_y: float):
     conn = get_connection()
     cur = conn.cursor()

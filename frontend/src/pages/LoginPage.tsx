@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
+import plnLogo from '../assets/PLN_logo_QC.png';
 import { authService } from '../services/authService';
 import { useAppDispatch } from '../store/hooks';
 import { loginError, loginStart, loginSuccess } from '../store/slices/authSlice';
@@ -38,7 +39,11 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen bg-[#F5F7FA]">
       <div className="hidden w-1/2 flex-col justify-center bg-[#0072CE] p-12 text-white lg:flex">
-        <span aria-hidden className="mb-6 inline-block h-3 w-16 rounded-sm bg-[#FFD100]" />
+        <img
+          src={plnLogo}
+          alt="PLN"
+          className="mb-6 h-16 w-auto self-start rounded-md bg-white px-3 py-2"
+        />
         <h1 className="text-3xl font-bold">NDT Inspection System</h1>
         <p className="mt-2 max-w-md text-white/80">
           Digitalisasi inspeksi Non-Destructive Testing: mapping indikasi 2D, perhitungan
@@ -50,6 +55,7 @@ export default function LoginPage() {
           onSubmit={handleSubmit}
           className="w-full max-w-sm rounded-lg border border-[#E2E8F0] bg-white p-6"
         >
+          <img src={plnLogo} alt="PLN" className="mb-4 h-12 w-auto lg:hidden" />
           <h2 className="text-xl font-semibold">Login</h2>
           <p className="mb-4 text-sm text-[#64748B]">Masuk untuk mengakses dashboard inspeksi.</p>
           <div className="space-y-3">
