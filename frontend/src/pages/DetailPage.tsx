@@ -137,7 +137,12 @@ export default function DetailPage() {
       <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
         <h2 className="text-[15px] font-semibold">Indication Details</h2>
         <div className="mt-2">
-          <IndicationTable items={component?.indikasi_list ?? []} selectedId={null} onSelect={() => undefined} />
+          <IndicationTable
+            items={component?.indikasi_list ?? []}
+            selectedId={null}
+            onSelect={() => undefined}
+            onEdit={() => undefined}
+          />
         </div>
       </section>
     </div>

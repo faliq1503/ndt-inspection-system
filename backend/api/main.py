@@ -33,6 +33,7 @@ from db.database import (
     tambah_component,
     tambah_indikasi,
     ambil_indikasi_by_component,
+    hitung_total_indikasi,
     simpan_evaluation_result,
     ambil_semua_hasil,
     ambil_hasil_by_id,
@@ -219,6 +220,11 @@ def add_indication(component_id: int, data: IndikasiIn):
         component_id, data.zona, data.panjang_mm, data.lebar_mm, data.posisi_x, data.posisi_y
     )
     return {"id": new_id, **data.dict()}
+
+
+@app.get("/indications/count")
+def count_indications():
+    return {"total_indication": hitung_total_indikasi()}
 
 
 @app.put("/indications/{indication_id}/position")

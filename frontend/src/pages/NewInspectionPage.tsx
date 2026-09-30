@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import type { ChangeEvent, FormEvent, MouseEvent } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/common/Button';
 import ErrorState from '../components/common/ErrorState';
@@ -7,12 +7,17 @@ import Input from '../components/common/Input';
 import Loading from '../components/common/Loading';
 import CalculationSummary from '../components/inspection/CalculationSummary';
 import EvaluationResultCard from '../components/inspection/EvaluationResultCard';
+import IndicationModal from '../components/inspection/IndicationModal';
 import IndicationTable from '../components/inspection/IndicationTable';
+import type { CanvasPercent } from '../components/inspection/MappingCanvas';
+
+/** Konva dimuat terpisah (code-split) agar bundle awal tetap kecil. */
+const MappingCanvas = lazy(() => import('../components/inspection/MappingCanvas'));
 import { inspectionService } from '../services/inspectionService';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { clearIndications, selectIndication, setIndications } from '../store/slices/indicationSlice';
 import { resetWorkspace, setComponentId, setForm, setResult } from '../store/slices/inspectionSlice';
-import type { ComponentDetail, Standard, Zone } from '../types/index';
+import type { ComponentDetail, Indication, Standard } from '../types/index';
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg'];
 const MAX_SIZE_MB = 10;
@@ -39,13 +44,11 @@ export default function NewInspectionPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  // Form tambah indikasi (modal sederhana — spec §13)
-  const [pendingPos, setPendingPos] = useState<{ x: number; y: number } | null>(null);
-  const [newZona, setNewZona] = useState<Zone>('C');
-  const [newPanjang, setNewPanjang] = useState('');
-  const [newLebar, setNewLebar] = useState('');
-
-  const imgRef = useRef<HTMLImageElement>(null);
+  // Modal Add/Edit indication + sinyal fokus marker dari tabel
+  const [addPos, setAddPos] = useState<CanvasPercent | null>(null);
+  const [editing, setEditing] = useState<Indication | null>(null);
+  const [modalSaving, setModalSaving] = useState(false);
+  const [focusReq, setFocusReq] = useState<{ id: number; nonce: number } | null>(null);
 
   function loadStandards() {
     setStandardsLoading(true);
@@ -128,40 +131,47 @@ export default function NewInspectionPage() {
     }
   }
 
-  function handleClickImage(e: MouseEvent<HTMLImageElement>) {
-    if (!imgRef.current || componentId === null) return;
-    const rect = imgRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setPendingPos({ x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 });
+  /** Klik pada drawing (koordinat % dari canvas) → buka modal Add. */
+  function handleCanvasClick(posPct: CanvasPercent) {
+    if (componentId === null) return;
+    setEditing(null);
+    setAddPos(posPct);
   }
 
-  async function handleAddIndication() {
-    if (componentId === null || pendingPos === null) return;
-    const panjang = parseFloat(newPanjang);
-    const lebar = parseFloat(newLebar);
-    if (Number.isNaN(panjang) || Number.isNaN(lebar) || panjang <= 0 || lebar <= 0) {
-      setError('Length dan Width harus angka positif (mm).');
-      return;
-    }
+  async function handleAddSubmit(v: { zona: Indication['zona']; panjang_mm: number; lebar_mm: number }) {
+    if (componentId === null || addPos === null) return;
     setError(null);
-    setBusy(true);
+    setModalSaving(true);
     try {
       await inspectionService.addIndication(componentId, {
-        zona: newZona,
-        panjang_mm: panjang,
-        lebar_mm: lebar,
-        posisi_x: pendingPos.x,
-        posisi_y: pendingPos.y,
+        zona: v.zona,
+        panjang_mm: v.panjang_mm,
+        lebar_mm: v.lebar_mm,
+        posisi_x: addPos.x,
+        posisi_y: addPos.y,
       });
       await refreshComponent(componentId);
-      setPendingPos(null);
-      setNewPanjang('');
-      setNewLebar('');
+      setAddPos(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menambah indikasi.');
     } finally {
-      setBusy(false);
+      setModalSaving(false);
+    }
+  }
+
+  /** Edit didukung backend via PUT /indications/{id}/size. */
+  async function handleEditSubmit(v: { zona: Indication['zona']; panjang_mm: number; lebar_mm: number }) {
+    if (editing === null) return;
+    setError(null);
+    setModalSaving(true);
+    try {
+      await inspectionService.updateSize(editing.id, v.zona, v.panjang_mm, v.lebar_mm);
+      if (componentId !== null) await refreshComponent(componentId);
+      setEditing(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menyimpan perubahan.');
+    } finally {
+      setModalSaving(false);
     }
   }
 
@@ -186,9 +196,17 @@ export default function NewInspectionPage() {
     dispatch(resetWorkspace());
     dispatch(clearIndications());
     setComponent(null);
-    setPendingPos(null);
+    setAddPos(null);
+    setEditing(null);
+    setFocusReq(null);
     setError(null);
     setNotice(null);
+  }
+
+  /** Klik row → highlight marker + center-kan di canvas. */
+  function handleSelectRow(id: number) {
+    dispatch(selectIndication(id));
+    setFocusReq((prev) => ({ id, nonce: (prev?.nonce ?? 0) + 1 }));
   }
 
   const gambarUrl = inspectionService.imageUrl(component?.gambar_path ?? null);
@@ -325,34 +343,19 @@ export default function NewInspectionPage() {
                     {gambarUrl ? 'Replace image' : 'Upload image (PNG/JPG)'}
                     <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
                   </label>
-                  {gambarUrl && <span className="text-xs text-[#64748B]">Klik drawing untuk Add Indication.</span>}
                 </div>
                 {gambarUrl ? (
-                  <div className="relative mt-3 inline-block max-w-full overflow-hidden rounded-md border border-[#E2E8F0]">
-                    {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
-                    <img
-                      ref={imgRef}
-                      src={gambarUrl}
-                      alt="Technical drawing"
-                      onClick={handleClickImage}
-                      className="block max-h-[520px] w-auto cursor-crosshair"
-                    />
-                    {indications.map((ind, i) =>
-                      ind.posisi_x !== null && ind.posisi_y !== null ? (
-                        <button
-                          key={ind.id}
-                          type="button"
-                          title={`Indikasi ${i + 1} — Zone ${ind.zona}`}
-                          onClick={() => dispatch(selectIndication(ind.id))}
-                          className={`absolute flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white text-[10px] font-bold text-white ${
-                            selectedId === ind.id ? 'bg-[#0072CE]' : 'bg-[#DC2626]'
-                          }`}
-                          style={{ left: `${ind.posisi_x}%`, top: `${ind.posisi_y}%` }}
-                        >
-                          {i + 1}
-                        </button>
-                      ) : null,
-                    )}
+                  <div className="mt-3">
+                    <Suspense fallback={<Loading label="Memuat canvas..." />}>
+                      <MappingCanvas
+                        imageUrl={gambarUrl}
+                        indications={indications}
+                        selectedId={selectedId}
+                        onSelect={(id) => dispatch(selectIndication(id))}
+                        onCanvasClick={handleCanvasClick}
+                        focusRequest={focusReq}
+                      />
+                    </Suspense>
                   </div>
                 ) : (
                   <p className="mt-2 text-sm text-[#64748B]">Belum ada drawing. Upload PNG/JPG untuk mulai mapping.</p>
@@ -361,54 +364,34 @@ export default function NewInspectionPage() {
             )}
           </section>
 
-          {pendingPos && (
-            <section className="rounded-lg border border-[#0072CE]/40 bg-white p-4" aria-label="Add Indication">
-              <h3 className="text-[15px] font-semibold">Add Indication</h3>
-              <p className="text-xs text-[#64748B]">
-                Coordinate X: {pendingPos.x} — Y: {pendingPos.y}
-              </p>
-              <div className="mt-2 grid grid-cols-3 gap-3">
-                <div>
-                  <label htmlFor="zona" className="mb-1 block text-[13px] font-medium">
-                    Zone
-                  </label>
-                  <select
-                    id="zona"
-                    value={newZona}
-                    onChange={(e) => setNewZona(e.target.value as Zone)}
-                    className="w-full rounded-md border border-[#E2E8F0] px-3 py-2 text-sm"
-                  >
-                    <option value="C">C</option>
-                    <option value="A">A</option>
-                  </select>
-                </div>
-                <Input
-                  label="Length (mm)"
-                  type="number"
-                  step="any"
-                  value={newPanjang}
-                  onChange={(e) => setNewPanjang(e.target.value)}
-                />
-                <Input
-                  label="Width (mm)"
-                  type="number"
-                  step="any"
-                  value={newLebar}
-                  onChange={(e) => setNewLebar(e.target.value)}
-                />
-              </div>
-              <p className="mt-1 text-xs text-[#64748B]">
-                Area dihitung otomatis: Length × Width (tampilan).
-              </p>
-              <div className="mt-2 flex gap-2">
-                <Button variant="secondary" onClick={() => setPendingPos(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddIndication} loading={busy}>
-                  Add Indication
-                </Button>
-              </div>
-            </section>
+          {addPos && (
+            <IndicationModal
+              key={`add-${addPos.x}-${addPos.y}`}
+              title="Add Indication"
+              coordinateText={`X: ${addPos.x} — Y: ${addPos.y}`}
+              initialZona="C"
+              initialPanjang=""
+              initialLebar=""
+              saving={modalSaving}
+              submitLabel="Add Indication"
+              onClose={() => setAddPos(null)}
+              onSubmit={handleAddSubmit}
+            />
+          )}
+
+          {editing && (
+            <IndicationModal
+              key={`edit-${editing.id}`}
+              title={`Edit Indication #${indications.findIndex((i) => i.id === editing.id) + 1}`}
+              coordinateText={`X: ${editing.posisi_x ?? '-'} — Y: ${editing.posisi_y ?? '-'}`}
+              initialZona={editing.zona}
+              initialPanjang={String(editing.panjang_mm)}
+              initialLebar={String(editing.lebar_mm)}
+              saving={modalSaving}
+              submitLabel="Save Changes"
+              onClose={() => setEditing(null)}
+              onSubmit={handleEditSubmit}
+            />
           )}
 
           {componentId !== null && (
@@ -418,7 +401,11 @@ export default function NewInspectionPage() {
                 <IndicationTable
                   items={indications}
                   selectedId={selectedId}
-                  onSelect={(id) => dispatch(selectIndication(id))}
+                  onSelect={handleSelectRow}
+                  onEdit={(ind) => {
+                    setAddPos(null);
+                    setEditing(ind);
+                  }}
                 />
               </div>
               <div className="mt-3">

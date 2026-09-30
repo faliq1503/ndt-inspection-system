@@ -11,12 +11,15 @@ import { formatNumber } from '../utils/format';
 /** Halaman /dashboard — ringkasan dari GET /results (tanpa mock). */
 export default function DashboardPage() {
   const [rows, setRows] = useState<ResultRow[]>([]);
+  const [totalIndication, setTotalIndication] = useState<number | null>(null);
+  const [totalFailed, setTotalFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
     setError(null);
+    setTotalFailed(false);
     inspectionService
       .listResults()
       .then((data) => {
@@ -26,6 +29,13 @@ export default function DashboardPage() {
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Gagal memuat dashboard.');
         setLoading(false);
+      });
+    inspectionService
+      .totalIndications()
+      .then((total) => setTotalIndication(total))
+      .catch(() => {
+        setTotalIndication(null);
+        setTotalFailed(true);
       });
   }
 
@@ -47,8 +57,11 @@ export default function DashboardPage() {
     { label: 'Total Inspection', value: String(stats.total) },
     { label: 'ACC', value: String(stats.acc) },
     { label: 'REJECT', value: String(stats.reject) },
-    // PLACEHOLDER: backend /results tidak mengembalikan jumlah indikasi.
-    { label: 'Total Indication', value: '—', note: 'Belum ada endpoint agregat' },
+    {
+      label: 'Total Indication',
+      value: totalIndication === null ? '—' : String(totalIndication),
+      note: totalFailed ? 'Unable to load data' : undefined,
+    },
   ];
 
   return (

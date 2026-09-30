@@ -19,6 +19,8 @@ export default function HistoryPage() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'ALL' | EvaluationStatus>('ALL');
   const [page, setPage] = useState(1);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [dlError, setDlError] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
@@ -56,6 +58,19 @@ export default function HistoryPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  /** Export PDF backend (reportlab) untuk satu baris inspeksi. */
+  async function handleExportPdf(resultId: number) {
+    setDlError(null);
+    setDownloadingId(resultId);
+    try {
+      await inspectionService.downloadReportPdf(resultId);
+    } catch (err) {
+      setDlError(err instanceof Error ? err.message : 'Gagal mengunduh PDF.');
+    } finally {
+      setDownloadingId(null);
+    }
+  }
 
   if (loading) return <Loading label="Memuat inspection history..." />;
   if (error) return <ErrorState message={error} onRetry={load} />;
@@ -126,6 +141,11 @@ export default function HistoryPage() {
         />
       ) : (
         <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
+          {dlError && (
+            <p role="alert" className="mb-3 rounded-md bg-[#DC2626]/10 px-3 py-2 text-sm text-[#DC2626]">
+              {dlError}
+            </p>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full whitespace-nowrap text-left text-[13px]">
               <thead>
@@ -153,9 +173,20 @@ export default function HistoryPage() {
                       <StatusBadge status={r.status} />
                     </td>
                     <td className="py-2">
-                      <Link to={`/inspection/${r.id}`} className="font-medium text-[#0072CE] hover:underline">
-                        View
-                      </Link>
+                      <span className="flex items-center gap-3">
+                        <Link to={`/inspection/${r.id}`} className="font-medium text-[#0072CE] hover:underline">
+                          View
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleExportPdf(r.id)}
+                          disabled={downloadingId !== null}
+                          title="Export laporan PDF baris ini"
+                          className="rounded-md border border-[#0072CE]/40 bg-[#E8F4FC] px-2.5 py-1 text-xs font-semibold text-[#0072CE] hover:bg-[#0072CE] hover:text-white disabled:opacity-40"
+                        >
+                          {downloadingId === r.id ? 'Loading…' : 'Export PDF'}
+                        </button>
+                      </span>
                     </td>
                   </tr>
                 ))}
