@@ -5,6 +5,7 @@ type Variant = 'primary' | 'secondary' | 'danger';
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   loading?: boolean;
+  loadingText?: string;
 }
 
 const STYLES: Record<Variant, string> = {
@@ -13,14 +14,21 @@ const STYLES: Record<Variant, string> = {
   danger: 'bg-[#DC2626] text-white hover:bg-[#DC2626]/90',
 };
 
-export default function Button({ variant = 'primary', loading = false, children, ...rest }: Props) {
+export default function Button({ variant = 'primary', loading = false, loadingText = 'Memuat...', children, ...rest }: Props) {
   return (
     <button
       {...rest}
       disabled={rest.disabled ?? loading}
-      className={`rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${STYLES[variant]} ${rest.className ?? ''}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${STYLES[variant]} ${rest.className ?? ''}`}
     >
-      {loading ? 'Memuat...' : children}
+      {loading ? (
+        <>
+          <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          {loadingText}
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 }
