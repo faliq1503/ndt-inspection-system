@@ -44,6 +44,9 @@ export interface Indication {
   /** posisi dalam persen 0-100 relatif terhadap gambar tampil */
   posisi_x: number | null;
   posisi_y: number | null;
+  /** dihitung backend, null sebelum pernah di-calculate (lihat GET /components/:id) */
+  a_bond_individual: number | null;
+  persen_individual: number | null;
 }
 
 /** backend: GET /components/{id} -> component + indikasi_list */

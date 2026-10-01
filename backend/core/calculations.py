@@ -80,6 +80,17 @@ def cari_indikasi_terbesar_dimensi(daftar_indikasi: List[Tuple[float, float]]) -
     return max(max(p, l) for p, l in daftar_indikasi)
 
 
+def hitung_bond_dan_persen_individual(luas_zona_mm2: float, luas_indikasi_mm2: float) -> Tuple[float, float]:
+    """
+    Untuk satu indikasi saja: luas bond dan % seandainya cuma indikasi ini
+    yang ada di zonanya. Dipakai untuk kolom per-baris di tabel indikasi,
+    bukan untuk total zona (itu tetap pakai hitung_luas_bond biasa).
+    """
+    bond = hitung_luas_bond(luas_zona_mm2, luas_indikasi_mm2)
+    persen = hitung_persentase_unbond(luas_indikasi_mm2, bond)
+    return bond, persen
+
+
 def cari_indikasi_terbesar_luas(daftar_indikasi: List[Tuple[float, float]]) -> float:
     """
     Untuk Zone C: cari luas (panjang x lebar) terbesar di antara semua

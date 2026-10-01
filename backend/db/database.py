@@ -330,6 +330,19 @@ def ambil_semua_hasil():
     return [dict(row) for row in rows]
 
 
+def ambil_hasil_terbaru_by_component(component_id: int):
+    """Hasil evaluasi PALING BARU untuk satu component, atau None kalau belum pernah dihitung."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT a_zone_a, a_zone_c FROM evaluation_result WHERE component_id = ? ORDER BY id DESC LIMIT 1",
+        (component_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
 def ambil_hasil_by_id(result_id: int):
     conn = get_connection()
     cur = conn.cursor()
