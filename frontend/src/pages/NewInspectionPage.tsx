@@ -272,12 +272,21 @@ export default function NewInspectionPage() {
                 placeholder="101"
               />
             </div>
-            <Input
-              label="Inspection Zone"
-              value={form.zona}
-              onChange={(e) => dispatch(setForm({ zona: e.target.value }))}
-              placeholder="mis. Zone C"
-            />
+            <div>
+              <label htmlFor="bearing-inspection" className="mb-1 block text-sm font-medium text-[#172033]">
+                Bearing Inspection
+              </label>
+              <select
+                id="bearing-inspection"
+                value={form.zona}
+                onChange={(e) => dispatch(setForm({ zona: e.target.value }))}
+                className="w-full rounded-md border border-[#D0D9EA] bg-white px-3 py-2 text-sm text-[#172033] focus:border-[#0072CE] focus:outline-none focus:ring-[3px] focus:ring-[#0072CE]/15"
+              >
+                <option value="">-- Pilih bearing inspection --</option>
+                <option value="Upper">Upper</option>
+                <option value="Lower">Lower</option>
+              </select>
+            </div>
             <Input
               label="Inspector"
               value={user?.username ?? ''}

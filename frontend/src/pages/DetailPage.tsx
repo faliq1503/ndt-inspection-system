@@ -92,7 +92,7 @@ export default function DetailPage() {
               ['Inspection ID', `#${result.id}`],
               ['Component', result.jenis_benda],
               ['Diameter', `${formatNumber(result.diameter_mm)} mm`],
-              ['Zone', result.zona],
+              ['Upper/Lower', result.zona],
               ['Date', formatDate(component?.tanggal_input)],
               ['Inspector', result.inspector ?? '-'],
             ] as Array<[string, string]>

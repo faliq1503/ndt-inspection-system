@@ -13,7 +13,7 @@ const ADMIN_MENU = [
   { to: '/admin/users', label: 'Manage User' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const user = useAppSelector((s) => s.auth.user);
@@ -26,6 +26,23 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col gap-1 rounded-lg border border-[#E2E8F0] bg-white p-3 md:flex">
+      <div className="mb-1 flex items-center justify-between">
+        <p className="px-3 text-xs font-semibold uppercase tracking-wide text-[#64748B]">Menu</p>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup sidebar"
+            title="Tutup sidebar"
+            className="rounded-md p-1.5 text-[#64748B] hover:bg-[#F5F7FA] hover:text-[#172033]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
       <nav className="flex flex-col gap-1" aria-label="Navigasi utama">
         {menu.map((m) => (
           <NavLink

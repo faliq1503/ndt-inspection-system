@@ -34,3 +34,21 @@ body {
   outline: 2px solid var(--ndt-primary);
   outline-offset: 2px;
 }
+
+/* Animasi masuk login card: naik ringan + fade, 300ms, hormati reduced-motion */
+@keyframes ndt-login-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-login-rise {
+    animation: ndt-login-rise 0.3s ease-out both;
+  }
+}

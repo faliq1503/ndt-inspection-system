@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from api.auth import bearer_scheme, get_current_user, require_admin, router as auth_router
 
+from core.calculations import hitung_bond_dan_persen_individual
 from core.evaluation import evaluasi_komponen
 from core.models import Standard
 from db.database import (
@@ -38,6 +39,7 @@ from db.database import (
     ambil_semua_hasil,
     ambil_hasil_by_id,
     ambil_component_by_id,
+    ambil_hasil_terbaru_by_component,
     simpan_gambar_path,
     update_posisi_indikasi,
     update_ukuran_indikasi,
@@ -185,8 +187,27 @@ def get_component(component_id: int):
     comp = ambil_component_by_id(component_id)
     if comp is None:
         raise HTTPException(status_code=404, detail="Component tidak ditemukan")
+
     indikasi_list = ambil_indikasi_by_component(component_id)
-    return {**comp, "indikasi_list": indikasi_list}
+    hasil_terbaru = ambil_hasil_terbaru_by_component(component_id)
+
+    indikasi_lengkap = []
+    for ind in indikasi_list:
+        bond_individual = None
+        persen_individual = None
+        if hasil_terbaru is not None:
+            luas_zona = hasil_terbaru["a_zone_a"] if ind["zona"] == "A" else hasil_terbaru["a_zone_c"]
+            luas_indikasi = ind["panjang_mm"] * ind["lebar_mm"]
+            bond_individual, persen_individual = hitung_bond_dan_persen_individual(luas_zona, luas_indikasi)
+            bond_individual = round(bond_individual, 2)
+            persen_individual = round(persen_individual, 2)
+        indikasi_lengkap.append({
+            **ind,
+            "a_bond_individual": bond_individual,
+            "persen_individual": persen_individual,
+        })
+
+    return {**comp, "indikasi_list": indikasi_lengkap}
 
 
 @app.post("/components/{component_id}/upload-image")

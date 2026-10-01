@@ -11,6 +11,9 @@ interface Props {
 /**
  * Tabel indikasi. Kolom Area menampilkan properti model backend
  * (Indication.luas_mm2 = panjang × lebar) — bukan formula baru.
+ * Kolom Luas Bond dan % juga dari backend (GET /components/:id),
+ * dihitung per-indikasi terhadap luas zonanya masing-masing; null
+ * sebelum komponen pernah di-calculate.
  * Delete belum tersedia karena backend tidak memiliki endpoint-nya.
  */
 export default function IndicationTable({ items, selectedId, onSelect, onEdit }: Props) {
@@ -29,6 +32,8 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit }:
             <th className="py-2 pr-3 font-medium">Length (mm)</th>
             <th className="py-2 pr-3 font-medium">Width (mm)</th>
             <th className="py-2 pr-3 font-medium">Area (L×W)</th>
+            <th className="py-2 pr-3 font-medium">Luas Bond</th>
+            <th className="py-2 pr-3 font-medium">%</th>
             <th className="py-2 font-medium">Action</th>
           </tr>
         </thead>
@@ -48,6 +53,12 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit }:
               <td className="py-2 pr-3">{formatNumber(ind.panjang_mm)}</td>
               <td className="py-2 pr-3">{formatNumber(ind.lebar_mm)}</td>
               <td className="py-2 pr-3">{formatNumber(ind.panjang_mm * ind.lebar_mm)}</td>
+              <td className="py-2 pr-3">
+                {ind.a_bond_individual !== null ? `${formatNumber(ind.a_bond_individual)} mm²` : '-'}
+              </td>
+              <td className="py-2 pr-3">
+                {ind.persen_individual !== null ? `${formatNumber(ind.persen_individual)} %` : '-'}
+              </td>
               <td className="py-2">
                 <button
                   type="button"

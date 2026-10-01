@@ -112,7 +112,7 @@ export default function DashboardPage() {
                 <tr className="border-b border-[#E2E8F0] text-[#64748B]">
                   <th className="py-2 pr-4 font-medium">Inspection ID</th>
                   <th className="py-2 pr-4 font-medium">Component</th>
-                  <th className="py-2 pr-4 font-medium">Zone</th>
+                  <th className="py-2 pr-4 font-medium">Upper/Lower</th>
                   <th className="py-2 pr-4 font-medium">% Unbound A</th>
                   <th className="py-2 pr-4 font-medium">% Unbound C</th>
                   <th className="py-2 pr-4 font-medium">Result</th>
