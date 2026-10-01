@@ -16,7 +16,7 @@ const MappingCanvas = lazy(() => import('../components/inspection/MappingCanvas'
 import { inspectionService } from '../services/inspectionService';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { clearIndications, selectIndication, setIndications } from '../store/slices/indicationSlice';
-import { resetWorkspace, setComponentId, setForm, setResult } from '../store/slices/inspectionSlice';
+import { resetWorkspace, setComponentId, setForm, setResult, suggestLebarZonaA } from '../store/slices/inspectionSlice';
 import type { ComponentDetail, Indication, Standard } from '../types/index';
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg'];
@@ -79,10 +79,19 @@ export default function NewInspectionPage() {
     e.preventDefault();
     setError(null);
     setNotice(null);
-    const diameter = parseFloat(form.diameterMm);
+    const panjangPManual = form.pakaiPManual ? parseFloat(form.panjangPManual) : null;
+    const diameter = form.pakaiPManual ? 0 : parseFloat(form.diameterMm);
     const panjang = parseFloat(form.panjangLMm);
-    if (!form.jenisBenda.trim() || Number.isNaN(diameter) || Number.isNaN(panjang) || form.standardId === '') {
-      setError('Component, Diameter, Length, dan Standard wajib diisi dengan benar.');
+    const lebarZonaA = form.lebarZonaA.trim() === '' ? null : parseFloat(form.lebarZonaA);
+    if (
+      !form.jenisBenda.trim() ||
+      (!form.pakaiPManual && Number.isNaN(diameter)) ||
+      (form.pakaiPManual && (panjangPManual === null || Number.isNaN(panjangPManual))) ||
+      Number.isNaN(panjang) ||
+      form.standardId === '' ||
+      (lebarZonaA !== null && Number.isNaN(lebarZonaA))
+    ) {
+      setError('Semua field wajib diisi dengan benar (Diameter ATAU P, pilih salah satu).');
       return;
     }
     setBusy(true);
@@ -93,6 +102,8 @@ export default function NewInspectionPage() {
         panjang_l_mm: panjang,
         zona: form.zona.trim(),
         standard_id: form.standardId,
+        lebar_zona_a_mm: lebarZonaA,
+        panjang_p_mm: panjangPManual,
       });
       dispatch(setComponentId(created.id));
       dispatch(setResult(null));
@@ -254,24 +265,59 @@ export default function NewInspectionPage() {
               onChange={(e) => dispatch(setForm({ jenisBenda: e.target.value }))}
               placeholder="mis. Bearing"
             />
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="Diameter (mm)"
-                type="number"
-                step="any"
-                value={form.diameterMm}
-                onChange={(e) => dispatch(setForm({ diameterMm: e.target.value }))}
-                placeholder="360"
+            <label className="flex items-center gap-2 text-sm text-[#172033]">
+              <input
+                type="checkbox"
+                checked={form.pakaiPManual}
+                onChange={(e) => dispatch(setForm({ pakaiPManual: e.target.checked }))}
               />
+              Komponen berbentuk pad/sepatu (isi P langsung, bukan Diameter)
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {form.pakaiPManual ? (
+                <Input
+                  label="P / Keliling Pad (mm)"
+                  type="number"
+                  step="any"
+                  value={form.panjangPManual}
+                  onChange={(e) => dispatch(setForm({ panjangPManual: e.target.value }))}
+                  placeholder="150"
+                  hint="Diisi langsung, tidak dihitung dari Diameter."
+                />
+              ) : (
+                <Input
+                  label="Diameter (mm)"
+                  type="number"
+                  step="any"
+                  value={form.diameterMm}
+                  onChange={(e) => dispatch(setForm({ diameterMm: e.target.value }))}
+                  placeholder="360"
+                />
+              )}
               <Input
                 label="Length (mm)"
                 type="number"
                 step="any"
                 value={form.panjangLMm}
-                onChange={(e) => dispatch(setForm({ panjangLMm: e.target.value }))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  dispatch(setForm({ panjangLMm: value }));
+                  const n = parseFloat(value);
+                  if (!Number.isNaN(n)) dispatch(suggestLebarZonaA(n));
+                }}
                 placeholder="101"
               />
             </div>
+            <Input
+              label="Lebar Zone A (mm)"
+              type="number"
+              step="any"
+              value={form.lebarZonaA}
+              onChange={(e) =>
+                dispatch(setForm({ lebarZonaA: e.target.value, lebarZonaATouched: true }))
+              }
+              hint="Default 10% dari Length (DOD-STD-2183). Boleh diubah manual, mis. untuk pad/sepatu."
+            />
             <div>
               <label htmlFor="bearing-inspection" className="mb-1 block text-sm font-medium text-[#172033]">
                 Bearing Inspection

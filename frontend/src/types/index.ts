@@ -32,6 +32,8 @@ export interface ComponentCreate {
   panjang_l_mm: number;
   zona: string;
   standard_id: number;
+  lebar_zona_a_mm: number | null;
+  panjang_p_mm: number | null;
 }
 
 /** backend: satu baris tabel `indication` */

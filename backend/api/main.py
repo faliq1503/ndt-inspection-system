@@ -40,6 +40,9 @@ from db.database import (
     ambil_hasil_by_id,
     ambil_component_by_id,
     ambil_hasil_terbaru_by_component,
+    hapus_hasil_by_id,
+    hitung_sisa_hasil_untuk_component,
+    hapus_component_dan_indikasi,
     simpan_gambar_path,
     update_posisi_indikasi,
     update_ukuran_indikasi,
@@ -101,6 +104,8 @@ class ComponentIn(BaseModel):
     panjang_l_mm: float
     zona: str
     standard_id: int
+    lebar_zona_a_mm: Optional[float] = None
+    panjang_p_mm: Optional[float] = None
 
 
 class IndikasiIn(BaseModel):
@@ -115,6 +120,10 @@ class IndikasiUpdateIn(BaseModel):
     zona: str
     panjang_mm: float
     lebar_mm: float
+
+
+class BulkDeleteIn(BaseModel):
+    result_ids: List[int]
 
 
 class PosisiIn(BaseModel):
@@ -178,6 +187,8 @@ def create_component(data: ComponentIn, user: dict = Depends(get_current_user)):
         zona=data.zona,
         standard_id=data.standard_id,
         inspector=user["username"],
+        lebar_zona_a_mm=data.lebar_zona_a_mm,
+        panjang_p_mm=data.panjang_p_mm,
     )
     return {"id": component_id, "inspector": user["username"], **data.dict()}
 
@@ -278,7 +289,7 @@ def calculate(component_id: int):
     standard = Standard(
         id=std_dict["id"],
         nama_standard=std_dict["nama_standard"],
-        lebar_zona_a_mm=std_dict["lebar_zona_a_mm"],
+        lebar_zona_a_mm=comp["lebar_zona_a_mm"] if comp["lebar_zona_a_mm"] is not None else std_dict["lebar_zona_a_mm"],
         toleransi_persen=std_dict["toleransi_persen"],
         individu_zona_a_mm=std_dict["individu_zona_a_mm"],
         individu_zona_c_persen=std_dict["individu_zona_c_persen"],
@@ -296,6 +307,7 @@ def calculate(component_id: int):
         indikasi_zone_a=indikasi_zone_a,
         indikasi_zone_c=indikasi_zone_c,
         standard=standard,
+        panjang_p_mm=comp["panjang_p_mm"],
     )
 
     simpan_evaluation_result({
@@ -338,6 +350,37 @@ def export_pdf(result_id: int):
 
     return FileResponse(path, media_type="application/pdf", filename=f"laporan_ndt_{result_id}.pdf")
 
+
+@app.post("/results/bulk-delete")
+def bulk_delete_results(data: BulkDeleteIn, _: dict = Depends(get_current_user)):
+    affected_component_ids = set()
+    not_found = []
+    for result_id in data.result_ids:
+        comp_id = hapus_hasil_by_id(result_id)
+        if comp_id is None:
+            not_found.append(result_id)
+        else:
+            affected_component_ids.add(comp_id)
+
+    deleted_components = 0
+    deleted_images = 0
+    for comp_id in affected_component_ids:
+        # Komponen cuma dihapus kalau sudah tidak ada riwayat lain yang tersisa.
+        if hitung_sisa_hasil_untuk_component(comp_id) == 0:
+            gambar_path = hapus_component_dan_indikasi(comp_id)
+            deleted_components += 1
+            if gambar_path:
+                full_path = os.path.join(IMAGES_DIR, gambar_path)
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+                    deleted_images += 1
+
+    return {
+        "deleted_results": len(data.result_ids) - len(not_found),
+        "deleted_components": deleted_components,
+        "deleted_images": deleted_images,
+        "not_found_result_ids": not_found,
+    }
 
 @app.get("/results/export/excel")
 def export_excel():

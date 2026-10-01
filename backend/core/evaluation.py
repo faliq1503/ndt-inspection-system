@@ -29,6 +29,7 @@ def evaluasi_komponen(
     indikasi_zone_a: list,
     indikasi_zone_c: list,
     standard: Standard,
+    panjang_p_mm: float = None,
 ) -> EvaluationResult:
     hasil = hitung_semua(
         diameter_mm=diameter_mm,
@@ -36,6 +37,7 @@ def evaluasi_komponen(
         indikasi_zone_a=indikasi_zone_a,
         indikasi_zone_c=indikasi_zone_c,
         lebar_zona_a_mm=standard.lebar_zona_a_mm,
+        panjang_p_mm=panjang_p_mm,
     )
 
     # --- Evaluasi Zone A ---

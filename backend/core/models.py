@@ -59,6 +59,7 @@ class Component:
     id: Optional[int] = None
     jenis_benda: str = ""
     diameter_mm: float = 0.0
+    panjang_p_mm: Optional[float] = None  # kalau diisi, dipakai langsung sebagai P (bukan dihitung dari diameter)
     panjang_l_mm: float = 0.0
     zona: str = ""
     standard_id: Optional[int] = None

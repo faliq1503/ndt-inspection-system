@@ -21,8 +21,8 @@ export default function EvaluationResultCard({ result }: { result: EvaluationRes
       </div>
       <p className="mt-2 text-xs text-[#64748B]">
         {result.status === 'ACCEPT'
-          ? 'Within Acceptance Criteria (backend: ACCEPT).'
-          : 'Exceeds Acceptance Criteria (backend: REJECT).'}
+          ? 'Memenuhi kriteria penerimaan.'
+          : 'Melebihi batas toleransi, status ditolak (REJECT).'}
       </p>
     </section>
   );

@@ -20,7 +20,7 @@ Alur perhitungan:
 """
 
 import math
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 
 def hitung_keliling_babbit(diameter_mm: float) -> float:
@@ -111,12 +111,13 @@ def hitung_semua(
     indikasi_zone_a: List[Tuple[float, float]],
     indikasi_zone_c: List[Tuple[float, float]],
     lebar_zona_a_mm: float,
+    panjang_p_mm: Optional[float] = None,
 ) -> dict:
     """
     Menjalankan seluruh alur perhitungan, dengan Zone A dan Zone C
     dihitung terpisah.
     """
-    p = hitung_keliling_babbit(diameter_mm)
+    p = panjang_p_mm if panjang_p_mm is not None else hitung_keliling_babbit(diameter_mm)
     a_babbit = hitung_luas_babbit(p, lebar_l_mm)
     a_zone_c = hitung_luas_zone_c(p, lebar_l_mm, lebar_zona_a_mm)
     a_zone_a = hitung_luas_zone_a(a_babbit, a_zone_c)
@@ -160,10 +161,11 @@ if __name__ == "__main__":
     # di sheet itu, tapi di sini kita pakai P hasil hitung dari diameter
     # supaya konsisten dengan sistem kita)
     hasil = hitung_semua(
-        diameter_mm=360,
+        diameter_mm=0,
+        panjang_p_mm=150,
         lebar_l_mm=101,
         indikasi_zone_a=[(10, 101), (10, 101), (10, 70)],
-        indikasi_zone_c=[],
+        indikasi_zone_c=[(91, 50)],
         lebar_zona_a_mm=10,
     )
     for key, value in hasil.items():
