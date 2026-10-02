@@ -95,6 +95,10 @@ export const inspectionService = {
     return apiDownload('/results/export/excel', 'riwayat_hasil_ndt.xlsx');
   },
 
+  bulkDeleteResults(resultIds: number[]): Promise<{ deleted_components: number }> {
+    return apiPost<{ deleted_components: number }>('/results/bulk-delete', { result_ids: resultIds });
+  },
+
   reportPdfUrl(resultId: number): string {
     return `${API_URL}/results/${resultId}/report/pdf`;
   },

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import EmptyState from '../components/common/EmptyState';
 import ErrorState from '../components/common/ErrorState';
 import Input from '../components/common/Input';
@@ -21,6 +22,9 @@ export default function HistoryPage() {
   const [page, setPage] = useState(1);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [dlError, setDlError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function load() {
     setLoading(true);
@@ -55,9 +59,48 @@ export default function HistoryPage() {
     });
   }, [rows, search, filter]);
 
+  useEffect(() => {
+    setSelected(new Set());
+  }, [search, filter]);
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  function toggleSelect(id: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAllOnPage() {
+    const pageIds = pageRows.map((r) => r.id);
+    const allSelected = pageIds.every((id) => selected.has(id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    setDeleting(true);
+    setDlError(null);
+    try {
+      await inspectionService.bulkDeleteResults(Array.from(selected));
+      setSelected(new Set());
+      load();
+    } catch (err) {
+      setDlError(err instanceof Error ? err.message : 'Gagal menghapus inspeksi.');
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  }
 
   /** Export PDF backend (reportlab) untuk satu baris inspeksi. */
   async function handleExportPdf(resultId: number) {
@@ -82,17 +125,28 @@ export default function HistoryPage() {
           <h1 className="text-2xl font-semibold">Inspection History</h1>
           <p className="text-sm text-[#64748B]">View and manage completed inspections</p>
         </div>
-        <button
-          type="button"
-          onClick={() =>
-            inspectionService
-              .downloadExcel()
-              .catch((err: unknown) => window.alert(err instanceof Error ? err.message : 'Gagal mengunduh Excel.'))
-          }
-          className="rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm font-medium hover:bg-[#F5F7FA]"
-        >
-          Export Excel
-        </button>
+        <div className="flex items-center gap-2">
+          {selected.size > 0 && (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="rounded-md border border-[#DC2626]/40 bg-[#DC2626]/10 px-3 py-2 text-sm font-medium text-[#DC2626] hover:bg-[#DC2626] hover:text-white"
+            >
+              Hapus Terpilih ({selected.size})
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() =>
+              inspectionService
+                .downloadExcel()
+                .catch((err: unknown) => window.alert(err instanceof Error ? err.message : 'Gagal mengunduh Excel.'))
+            }
+            className="rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm font-medium hover:bg-[#F5F7FA]"
+          >
+            Export Excel
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 rounded-lg border border-[#E2E8F0] bg-white p-4 sm:flex-row">
@@ -150,6 +204,14 @@ export default function HistoryPage() {
             <table className="w-full whitespace-nowrap text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[#E2E8F0] text-[#64748B]">
+                  <th className="py-2 pr-3">
+                    <input
+                      type="checkbox"
+                      checked={pageRows.length > 0 && pageRows.every((r) => selected.has(r.id))}
+                      onChange={toggleSelectAllOnPage}
+                      aria-label="Pilih semua di halaman ini"
+                    />
+                  </th>
                   <th className="py-2 pr-4 font-medium">Inspection ID</th>
                   <th className="py-2 pr-4 font-medium">Component</th>
                   <th className="py-2 pr-4 font-medium">Upper/Lower</th>
@@ -163,6 +225,14 @@ export default function HistoryPage() {
               <tbody>
                 {pageRows.map((r) => (
                   <tr key={r.id} className="border-b border-[#E2E8F0] last:border-0">
+                    <td className="py-2 pr-3">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(r.id)}
+                        onChange={() => toggleSelect(r.id)}
+                        aria-label={`Pilih inspeksi #${r.id}`}
+                      />
+                    </td>
                     <td className="py-2 pr-4 font-medium">#{r.id}</td>
                     <td className="py-2 pr-4">{r.jenis_benda}</td>
                     <td className="py-2 pr-4">{r.zona}</td>
@@ -218,6 +288,15 @@ export default function HistoryPage() {
           </div>
         </section>
       )}
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Hapus inspeksi terpilih?"
+        message={`${selected.size} inspeksi akan dihapus permanen, termasuk foto dan semua indikasinya. Tindakan ini tidak bisa dibatalkan.`}
+        confirmLabel="Hapus"
+        loading={deleting}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

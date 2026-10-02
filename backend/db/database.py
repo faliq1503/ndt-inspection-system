@@ -46,6 +46,8 @@ def init_db():
             tanggal_input TEXT DEFAULT CURRENT_TIMESTAMP,
             gambar_path TEXT,
             inspector TEXT,
+            lebar_zona_a_mm REAL,
+            panjang_p_mm REAL,
             FOREIGN KEY (standard_id) REFERENCES standard (id)
         )
     """)
@@ -89,6 +91,8 @@ def init_db():
     migrasi_kolom = [
         ("component", "gambar_path", "TEXT"),
         ("component", "inspector", "TEXT"),
+        ("component", "lebar_zona_a_mm", "REAL"),
+        ("component", "panjang_p_mm", "REAL"),
         ("indication", "zona", "TEXT NOT NULL DEFAULT 'C'"),
         ("standard", "lebar_zona_a_mm", "REAL NOT NULL DEFAULT 25"),
         ("standard", "individu_zona_a_mm", "REAL NOT NULL DEFAULT 12.5"),
@@ -200,12 +204,12 @@ def hapus_standard(standard_id: int):
 # Fungsi dasar untuk Component + Indication
 # ---------------------------------------------------------------------
 
-def tambah_component(jenis_benda: str, diameter_mm: float, panjang_l_mm: float, zona: str, standard_id: int, inspector: str = None) -> int:
+def tambah_component(jenis_benda: str, diameter_mm: float, panjang_l_mm: float, zona: str, standard_id: int, inspector: str = None, lebar_zona_a_mm: float = None, panjang_p_mm: float = None) -> int:
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO component (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id, inspector) VALUES (?, ?, ?, ?, ?, ?)",
-        (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id, inspector),
+        "INSERT INTO component (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id, inspector, lebar_zona_a_mm, panjang_p_mm) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id, inspector, lebar_zona_a_mm, panjang_p_mm),
     )
     conn.commit()
     new_id = cur.lastrowid
@@ -341,6 +345,52 @@ def ambil_hasil_terbaru_by_component(component_id: int):
     row = cur.fetchone()
     conn.close()
     return dict(row) if row else None
+
+
+def hapus_hasil_by_id(result_id: int) -> int:
+    """Menghapus SATU baris evaluation_result saja. Return: component_id-nya."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT component_id FROM evaluation_result WHERE id = ?", (result_id,))
+    row = cur.fetchone()
+    component_id = row["component_id"] if row else None
+    cur.execute("DELETE FROM evaluation_result WHERE id = ?", (result_id,))
+    conn.commit()
+    conn.close()
+    return component_id
+
+
+def hitung_sisa_hasil_untuk_component(component_id: int) -> int:
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) AS n FROM evaluation_result WHERE component_id = ?", (component_id,))
+    row = cur.fetchone()
+    conn.close()
+    return row["n"]
+
+
+def hapus_component_dan_indikasi(component_id: int):
+    """Dipanggil HANYA kalau component_id sudah tidak punya evaluation_result tersisa."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT gambar_path FROM component WHERE id = ?", (component_id,))
+    row = cur.fetchone()
+    gambar_path = row["gambar_path"] if row else None
+
+    cur.execute("DELETE FROM indication WHERE component_id = ?", (component_id,))
+    cur.execute("DELETE FROM component WHERE id = ?", (component_id,))
+    conn.commit()
+    conn.close()
+    return gambar_path
+
+
+def ambil_component_id_by_result(result_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT component_id FROM evaluation_result WHERE id = ?", (result_id,))
+    row = cur.fetchone()
+    conn.close()
+    return row["component_id"] if row else None
 
 
 def ambil_hasil_by_id(result_id: int):
