@@ -98,7 +98,7 @@ export default function DetailPage() {
             [
               ['ID Inspeksi', `#${result.id}`],
               ['Komponen', result.jenis_benda],
-              ['Diameter', `${formatNumber(result.diameter_mm)} mm`],
+              ['Diameter', result.diameter_mm > 0 ? `${formatNumber(result.diameter_mm)} mm` : '-'],
               ['Upper/Lower', result.zona],
               ['Tanggal', formatDate(component?.tanggal_input)],
               ['Inspektur', result.inspector ?? '-'],

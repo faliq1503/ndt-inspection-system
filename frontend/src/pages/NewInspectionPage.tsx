@@ -91,7 +91,7 @@ export default function NewInspectionPage() {
       form.standardId === '' ||
       (lebarZonaA !== null && Number.isNaN(lebarZonaA))
     ) {
-      setError('Semua field wajib diisi dengan benar (Diameter ATAU P, pilih salah satu).');
+    setError('Semua field wajib diisi dengan benar (isi Diameter, atau Panjang (P) langsung).');
       return;
     }
     setBusy(true);
@@ -271,12 +271,12 @@ export default function NewInspectionPage() {
                 checked={form.pakaiPManual}
                 onChange={(e) => dispatch(setForm({ pakaiPManual: e.target.checked }))}
               />
-              Komponen berbentuk pad/sepatu (isi P langsung, bukan Diameter)
+              Panjang (P) sudah diketahui, isi langsung tanpa Diameter
             </label>
             <div className="grid grid-cols-2 gap-3">
               {form.pakaiPManual ? (
                 <Input
-                  label="P / Keliling Pad (mm)"
+                label="Panjang (P) (mm)"
                   type="number"
                   step="any"
                   value={form.panjangPManual}
@@ -292,10 +292,11 @@ export default function NewInspectionPage() {
                   value={form.diameterMm}
                   onChange={(e) => dispatch(setForm({ diameterMm: e.target.value }))}
                   placeholder="360"
+                  hint="Panjang (P) dihitung otomatis: π × D ÷ 2."
                 />
               )}
                 <Input
-                  label="Panjang (mm)"
+                label="Lebar (L) (mm)"
                 type="number"
                 step="any"
                 value={form.panjangLMm}
@@ -316,7 +317,7 @@ export default function NewInspectionPage() {
               onChange={(e) =>
                 dispatch(setForm({ lebarZonaA: e.target.value, lebarZonaATouched: true }))
               }
-              hint="Default 10% dari Panjang (DOD-STD-2183). Boleh diubah manual, mis. untuk pad/sepatu."
+              hint="Default 10% dari Lebar (L) (DOD-STD-2183). Boleh diubah manual, mis. untuk pad/sepatu."
             />
             <div>
               <label htmlFor="bearing-inspection" className="mb-1 block text-sm font-medium text-[#172033]">
