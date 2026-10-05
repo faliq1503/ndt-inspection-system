@@ -9,8 +9,8 @@ import { useAppSelector } from '../store/hooks';
 import type { ManagedUser, UserRole } from '../types/index';
 
 function validatePassword(pw: string): string | null {
-  if (pw.length < 8) return 'Password minimal 8 karakter.';
-  if (pw.length > 72) return 'Password maksimal 72 karakter.';
+  if (pw.length < 8) return 'Kata sandi minimal 8 karakter.';
+  if (pw.length > 72) return 'Kata sandi maksimal 72 karakter.';
   return null;
 }
 
@@ -41,7 +41,7 @@ export default function ManageUsersPage() {
     setLoadError(null);
     refresh()
       .catch((err: unknown) => {
-        setLoadError(err instanceof Error ? err.message : 'Gagal memuat daftar user.');
+        setLoadError(err instanceof Error ? err.message : 'Gagal memuat daftar pengguna.');
       })
       .finally(() => setLoading(false));
   }
@@ -56,7 +56,7 @@ export default function ManageUsersPage() {
     setNotice(null);
     const name = username.trim();
     if (name.length < 3) {
-      setError('Username minimal 3 karakter.');
+      setError('Nama pengguna minimal 3 karakter.');
       return;
     }
     const pwError = validatePassword(password);
@@ -104,23 +104,23 @@ export default function ManageUsersPage() {
     setBusy(true);
     try {
       await userService.resetPassword(resetTarget.id, resetPassword);
-      setNotice(`Password "${resetTarget.username}" berhasil direset.`);
+      setNotice(`Kata sandi "${resetTarget.username}" berhasil direset.`);
       setResetTarget(null);
       setResetPassword('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal reset password.');
+      setError(err instanceof Error ? err.message : 'Gagal mereset kata sandi.');
     } finally {
       setBusy(false);
     }
   }
 
-  if (loading) return <Loading label="Memuat daftar user..." />;
+  if (loading) return <Loading label="Memuat daftar pengguna..." />;
   if (loadError) return <ErrorState message={loadError} onRetry={initialLoad} />;
 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Manage User</h1>
+        <h1 className="text-2xl font-semibold">Kelola Pengguna</h1>
         <p className="text-sm text-[#64748B]">Buat dan kelola akun staff. Tidak ada registrasi mandiri.</p>
       </div>
 
@@ -143,14 +143,14 @@ export default function ManageUsersPage() {
           >
             <h2 className="text-[15px] font-semibold">Buat Akun Baru</h2>
             <Input
-              label="Username"
+              label="Nama Pengguna"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="mis. budi.qc"
               autoComplete="off"
             />
             <Input
-              label="Password"
+              label="Kata Sandi"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -159,7 +159,7 @@ export default function ManageUsersPage() {
             />
             <div>
               <label htmlFor="role" className="mb-1 block text-[13px] font-medium">
-                Role
+                Peran
               </label>
               <select
                 id="role"
@@ -181,9 +181,9 @@ export default function ManageUsersPage() {
               onSubmit={handleReset}
               className="space-y-3 rounded-lg border border-[#0072CE]/40 bg-white p-4"
             >
-              <h2 className="text-[15px] font-semibold">Reset Password: {resetTarget.username}</h2>
+              <h2 className="text-[15px] font-semibold">Reset Kata Sandi: {resetTarget.username}</h2>
               <Input
-                label="Password baru"
+                label="Kata sandi baru"
                 type="password"
                 value={resetPassword}
                 onChange={(e) => setResetPassword(e.target.value)}
@@ -201,7 +201,7 @@ export default function ManageUsersPage() {
                   Batal
                 </Button>
                 <Button type="submit" loading={busy}>
-                  Simpan Password
+                  Simpan Kata Sandi
                 </Button>
               </div>
             </form>
@@ -214,8 +214,8 @@ export default function ManageUsersPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-[#E2E8F0] text-[#64748B]">
-                  <th className="py-2 pr-4 font-medium">Username</th>
-                  <th className="py-2 pr-4 font-medium">Role</th>
+                  <th className="py-2 pr-4 font-medium">Nama Pengguna</th>
+                  <th className="py-2 pr-4 font-medium">Peran</th>
                   <th className="py-2 pr-4 font-medium">Status</th>
                   <th className="py-2 font-medium">Aksi</th>
                 </tr>
@@ -243,7 +243,7 @@ export default function ManageUsersPage() {
                           {u.aktif ? 'Nonaktifkan' : 'Aktifkan'}
                         </Button>
                         <Button variant="secondary" onClick={() => setResetTarget(u)}>
-                          Reset Password
+                          Reset Kata Sandi
                         </Button>
                       </div>
                     </td>

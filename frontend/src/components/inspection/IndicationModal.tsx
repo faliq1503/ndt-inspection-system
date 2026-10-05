@@ -41,7 +41,7 @@ export default function IndicationModal({
     const p = parseFloat(panjang);
     const l = parseFloat(lebar);
     if (Number.isNaN(p) || Number.isNaN(l) || p <= 0 || l <= 0) {
-      setError('Length dan Width harus angka positif (mm).');
+      setError('Panjang dan Lebar harus angka positif (mm).');
       return;
     }
     setError(null);
@@ -55,7 +55,7 @@ export default function IndicationModal({
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={saving}>
-            Cancel
+            Batal
           </Button>
           <Button onClick={handleSubmit} loading={saving}>
             {submitLabel}
@@ -63,11 +63,11 @@ export default function IndicationModal({
         </>
       }
     >
-      <p className="mb-3 text-xs text-[#64748B]">Coordinate — {coordinateText}</p>
+      <p className="mb-3 text-xs text-[#64748B]">Koordinat — {coordinateText}</p>
       <div className="space-y-3">
         <div>
           <label htmlFor="ind-zona" className="mb-1 block text-[13px] font-medium text-[#172033]">
-            Zone
+            Zona
           </label>
           <select
             id="ind-zona"
@@ -80,14 +80,14 @@ export default function IndicationModal({
           </select>
         </div>
         <Input
-          label="Length (mm)"
+          label="Panjang (mm)"
           type="number"
           step="any"
           value={panjang}
           onChange={(e) => setPanjang(e.target.value)}
         />
         <Input
-          label="Width (mm)"
+          label="Lebar (mm)"
           type="number"
           step="any"
           value={lebar}

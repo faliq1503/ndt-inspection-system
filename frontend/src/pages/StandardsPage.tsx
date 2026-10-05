@@ -45,7 +45,7 @@ function toForm(s: Standard): FormState {
 /** Mengembalikan payload, atau string pesan error kalau input tidak valid. */
 function toPayload(f: FormState): StandardPayload | string {
   const nama = f.nama.trim();
-  if (!nama) return 'Nama standard wajib diisi.';
+  if (!nama) return 'Nama standar wajib diisi.';
 
   const lebar = parseFloat(f.lebarZonaA);
   const tol = parseFloat(f.toleransi);
@@ -60,7 +60,7 @@ function toPayload(f: FormState): StandardPayload | string {
     return 'Semua nilai harus lebih dari 0.';
   }
   if (tol <= 0 || tol > 100) return 'Toleransi harus di antara 0 dan 100 persen.';
-  if (indCPersen > 100) return 'Batas indikasi Zone C (%) tidak boleh lebih dari 100.';
+  if (indCPersen > 100) return 'Batas indikasi Zona C (%) tidak boleh lebih dari 100.';
 
   return {
     nama_standard: nama,
@@ -96,7 +96,7 @@ export default function StandardsPage() {
     setLoadError(null);
     refresh()
       .catch((err: unknown) => {
-        setLoadError(err instanceof Error ? err.message : 'Gagal memuat daftar standard.');
+        setLoadError(err instanceof Error ? err.message : 'Gagal memuat daftar standar.');
       })
       .finally(() => setLoading(false));
   }
@@ -127,10 +127,10 @@ export default function StandardsPage() {
         setEditingId(null);
         setForm(EMPTY_FORM);
       }
-      setNotice(`Standard "${deleteTarget.nama_standard}" berhasil dihapus.`);
+      setNotice(`Standar "${deleteTarget.nama_standard}" berhasil dihapus.`);
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menghapus standard.');
+      setError(err instanceof Error ? err.message : 'Gagal menghapus standar.');
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -156,28 +156,28 @@ export default function StandardsPage() {
     try {
       if (editingId === null) {
         await standardService.create(payload);
-        setNotice(`Standard "${payload.nama_standard}" berhasil dibuat.`);
+        setNotice(`Standar "${payload.nama_standard}" berhasil dibuat.`);
       } else {
         await standardService.update(editingId, payload);
-        setNotice(`Standard "${payload.nama_standard}" berhasil diperbarui.`);
+        setNotice(`Standar "${payload.nama_standard}" berhasil diperbarui.`);
       }
       setEditingId(null);
       setForm(EMPTY_FORM);
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menyimpan standard.');
+      setError(err instanceof Error ? err.message : 'Gagal menyimpan standar.');
     } finally {
       setBusy(false);
     }
   }
 
-  if (loading) return <Loading label="Memuat daftar standard..." />;
+  if (loading) return <Loading label="Memuat daftar standar..." />;
   if (loadError) return <ErrorState message={loadError} onRetry={initialLoad} />;
 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Manage Standard</h1>
+        <h1 className="text-2xl font-semibold">Kelola Standar</h1>
         <p className="text-sm text-[#64748B]">
           Kriteria penerimaan yang dipakai saat perhitungan dan evaluasi inspeksi.
         </p>
@@ -196,8 +196,8 @@ export default function StandardsPage() {
 
       <ConfirmDialog
         open={deleteTarget !== null}
-        title="Hapus standard?"
-        message={`Standard "${deleteTarget?.nama_standard ?? ''}" akan dihapus permanen dan tidak bisa dikembalikan.`}
+        title="Hapus standar?"
+        message={`Standar "${deleteTarget?.nama_standard ?? ''}" akan dihapus permanen dan tidak bisa dikembalikan.`}
         confirmLabel="Hapus"
         loading={deleting}
         onConfirm={confirmDelete}
@@ -209,21 +209,21 @@ export default function StandardsPage() {
           className="space-y-3 rounded-lg border border-[#E2E8F0] bg-white p-4"
         >
           <h2 className="text-[15px] font-semibold">
-            {editingId === null ? 'Buat Standard Baru' : `Edit Standard #${editingId}`}
+            {editingId === null ? 'Buat Standar Baru' : `Ubah Standar #${editingId}`}
           </h2>
           <Input
-            label="Nama Standard"
+            label="Nama Standar"
             value={form.nama}
             onChange={(e) => setField('nama', e.target.value)}
             placeholder="mis. DOD-STD-2183 (SH)"
           />
           <Input
-            label="Lebar Zone A (mm)"
+            label="Lebar Zona A (mm)"
             type="number"
             step="any"
             value={form.lebarZonaA}
             onChange={(e) => setField('lebarZonaA', e.target.value)}
-            hint="Offset Zone C = lebar Zone A × 2."
+            hint="Offset Zona C = lebar Zona A × 2."
           />
           <Input
             label="Toleransi Unbond (%)"
@@ -231,10 +231,10 @@ export default function StandardsPage() {
             step="any"
             value={form.toleransi}
             onChange={(e) => setField('toleransi', e.target.value)}
-            hint="Berlaku untuk Zone A dan Zone C."
+            hint="Berlaku untuk Zona A dan Zona C."
           />
           <Input
-            label="Maks. Dimensi 1 Indikasi Zone A (mm)"
+            label="Maks. Dimensi 1 Indikasi Zona A (mm)"
             type="number"
             step="any"
             value={form.individuA}
@@ -242,7 +242,7 @@ export default function StandardsPage() {
           />
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Zone C: Maks. Luas (%)"
+              label="Zona C: Maks. Luas (%)"
               type="number"
               step="any"
               value={form.individuCPersen}
@@ -250,7 +250,7 @@ export default function StandardsPage() {
               hint="Dari luas babbit total."
             />
             <Input
-              label="Zone C: Maks. Luas (mm²)"
+              label="Zona C: Maks. Luas (mm²)"
               type="number"
               step="any"
               value={form.individuCMax}
@@ -270,23 +270,23 @@ export default function StandardsPage() {
               </Button>
             )}
             <Button type="submit" loading={busy} className="flex-1">
-              {editingId === null ? 'Buat Standard' : 'Simpan Perubahan'}
+              {editingId === null ? 'Buat Standar' : 'Simpan Perubahan'}
             </Button>
           </div>
           <p className="text-xs text-[#64748B]">
-            Untuk versi standar baru, lebih aman membuat standard baru daripada mengubah yang lama.
+            Untuk versi standar baru, lebih aman membuat standar baru daripada mengubah yang lama.
             Menghitung ulang komponen lama akan memakai nilai terbaru.
           </p>
         </form>
 
         <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
-          <h2 className="text-[15px] font-semibold">Daftar Standard</h2>
+          <h2 className="text-[15px] font-semibold">Daftar Standar</h2>
           <div className="mt-2 overflow-x-auto">
             <table className="w-full whitespace-nowrap text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[#E2E8F0] text-[#64748B]">
                   <th className="py-2 pr-4 font-medium">Nama</th>
-                  <th className="py-2 pr-4 font-medium">Zone A (mm)</th>
+                  <th className="py-2 pr-4 font-medium">Zona A (mm)</th>
                   <th className="py-2 pr-4 font-medium">Toleransi</th>
                   <th className="py-2 pr-4 font-medium">Indikasi A</th>
                   <th className="py-2 pr-4 font-medium">Indikasi C</th>
@@ -306,7 +306,7 @@ export default function StandardsPage() {
                     <td className="py-2">
                     <div className="flex gap-2">
                         <Button variant="secondary" onClick={() => startEdit(s)}>
-                          Edit
+                          Ubah
                         </Button>
                         <Button variant="secondary" onClick={() => setDeleteTarget(s)}>
                           Hapus

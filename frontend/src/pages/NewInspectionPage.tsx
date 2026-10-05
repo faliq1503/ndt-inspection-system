@@ -60,7 +60,7 @@ export default function NewInspectionPage() {
         setStandardsLoading(false);
       })
       .catch((err: unknown) => {
-        setStandardsError(err instanceof Error ? err.message : 'Gagal memuat standard.');
+        setStandardsError(err instanceof Error ? err.message : 'Gagal memuat standar.');
         setStandardsLoading(false);
       });
   }
@@ -91,7 +91,7 @@ export default function NewInspectionPage() {
       form.standardId === '' ||
       (lebarZonaA !== null && Number.isNaN(lebarZonaA))
     ) {
-      setError('Semua field wajib diisi dengan benar (Diameter ATAU P, pilih salah satu).');
+    setError('Semua field wajib diisi dengan benar (isi Diameter, atau Panjang (P) langsung).');
       return;
     }
     setBusy(true);
@@ -109,7 +109,7 @@ export default function NewInspectionPage() {
       dispatch(setResult(null));
       dispatch(clearIndications());
       await refreshComponent(created.id);
-      setNotice(`Komponen #${created.id} dibuat. Lanjut upload drawing.`);
+      setNotice(`Komponen #${created.id} dibuat. Lanjut unggah gambar.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal membuat komponen.');
     } finally {
@@ -133,9 +133,9 @@ export default function NewInspectionPage() {
     try {
       await inspectionService.uploadImage(componentId, file);
       await refreshComponent(componentId);
-      setNotice('Drawing berhasil diupload.');
+      setNotice('Gambar berhasil diunggah.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal upload drawing.');
+      setError(err instanceof Error ? err.message : 'Gagal mengunggah gambar.');
     } finally {
       setBusy(false);
       e.target.value = '';
@@ -195,7 +195,7 @@ export default function NewInspectionPage() {
       const hasil = await inspectionService.calculate(componentId);
       dispatch(setResult(hasil));
       await refreshComponent(componentId);
-      setNotice('Inspection saved successfully. Hasil dihitung oleh backend.');
+      setNotice('Inspeksi berhasil disimpan. Hasil dihitung oleh backend.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menghitung.');
     } finally {
@@ -223,19 +223,19 @@ export default function NewInspectionPage() {
   const gambarUrl = inspectionService.imageUrl(component?.gambar_path ?? null);
   const activeStandard = standards.find((s) => s.id === form.standardId);
 
-  if (standardsLoading) return <Loading label="Memuat standard..." />;
+  if (standardsLoading) return <Loading label="Memuat standar..." />;
   if (standardsError) return <ErrorState message={standardsError} onRetry={loadStandards} />;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">New Inspection</h1>
-          <p className="text-sm text-[#64748B]">Input, mapping, calculation, dan evaluation</p>
+          <h1 className="text-2xl font-semibold">Inspeksi Baru</h1>
+          <p className="text-sm text-[#64748B]">Input, pemetaan, perhitungan, dan evaluasi</p>
         </div>
         {componentId !== null && (
           <Button variant="secondary" onClick={handleReset}>
-            Cancel
+            Batal
           </Button>
         )}
       </div>
@@ -258,9 +258,9 @@ export default function NewInspectionPage() {
             onSubmit={handleCreate}
             className="space-y-3 rounded-lg border border-[#E2E8F0] bg-white p-4"
           >
-            <h2 className="text-[15px] font-semibold">Inspection Data</h2>
+            <h2 className="text-[15px] font-semibold">Data Inspeksi</h2>
             <Input
-              label="Component / Object Type"
+              label="Komponen / Tipe Objek"
               value={form.jenisBenda}
               onChange={(e) => dispatch(setForm({ jenisBenda: e.target.value }))}
               placeholder="mis. Bearing"
@@ -271,12 +271,12 @@ export default function NewInspectionPage() {
                 checked={form.pakaiPManual}
                 onChange={(e) => dispatch(setForm({ pakaiPManual: e.target.checked }))}
               />
-              Komponen berbentuk pad/sepatu (isi P langsung, bukan Diameter)
+              Panjang (P) sudah diketahui, isi langsung tanpa Diameter
             </label>
             <div className="grid grid-cols-2 gap-3">
               {form.pakaiPManual ? (
                 <Input
-                  label="P / Keliling Pad (mm)"
+                label="Panjang (P) (mm)"
                   type="number"
                   step="any"
                   value={form.panjangPManual}
@@ -292,10 +292,11 @@ export default function NewInspectionPage() {
                   value={form.diameterMm}
                   onChange={(e) => dispatch(setForm({ diameterMm: e.target.value }))}
                   placeholder="360"
+                  hint="Panjang (P) dihitung otomatis: π × D ÷ 2."
                 />
               )}
-              <Input
-                label="Length (mm)"
+                <Input
+                label="Lebar (L) (mm)"
                 type="number"
                 step="any"
                 value={form.panjangLMm}
@@ -309,14 +310,14 @@ export default function NewInspectionPage() {
               />
             </div>
             <Input
-              label="Lebar Zone A (mm)"
+              label="Lebar Zona A (mm)"
               type="number"
               step="any"
               value={form.lebarZonaA}
               onChange={(e) =>
                 dispatch(setForm({ lebarZonaA: e.target.value, lebarZonaATouched: true }))
               }
-              hint="Default 10% dari Length (DOD-STD-2183). Boleh diubah manual, mis. untuk pad/sepatu."
+              hint="Default 10% dari Lebar (L) (DOD-STD-2183). Boleh diubah manual, mis. untuk pad/sepatu."
             />
             <div>
               <label htmlFor="bearing-inspection" className="mb-1 block text-sm font-medium text-[#172033]">
@@ -334,14 +335,14 @@ export default function NewInspectionPage() {
               </select>
             </div>
             <Input
-              label="Inspector"
+              label="Inspektur"
               value={user?.username ?? ''}
               readOnly
               hint="Otomatis dari akun yang sedang login."
             />
             <div>
               <label htmlFor="standard" className="mb-1 block text-[13px] font-medium">
-                Standard
+                Standar
               </label>
               <select
                 id="standard"
@@ -351,7 +352,7 @@ export default function NewInspectionPage() {
                 }
                 className="w-full rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm focus:border-[#0072CE] focus:outline-none"
               >
-                <option value="">-- Pilih standard --</option>
+                <option value="">-- Pilih standar --</option>
                 {standards.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.nama_standard} (toleransi {s.toleransi_persen}%)
@@ -360,7 +361,7 @@ export default function NewInspectionPage() {
               </select>
             </div>
             <Button type="submit" loading={busy} className="w-full">
-              {componentId === null ? 'Create Inspection' : 'Update & Recreate'}
+              {componentId === null ? 'Buat Inspeksi' : 'Perbarui & Buat Ulang'}
             </Button>
           </form>
 
@@ -373,10 +374,10 @@ export default function NewInspectionPage() {
                   to="/inspection/history"
                   className="flex-1 rounded-md border border-[#E2E8F0] bg-white px-4 py-2 text-center text-sm font-medium hover:bg-[#F5F7FA]"
                 >
-                  View History
+                  Lihat Riwayat
                 </Link>
                 <Button variant="secondary" onClick={handleReset} className="flex-1">
-                  Save & New
+                  Simpan & Baru
                 </Button>
               </div>
             </>
@@ -386,22 +387,22 @@ export default function NewInspectionPage() {
         {/* Kolom kanan: drawing + indikasi */}
         <div className="space-y-4">
           <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
-            <h2 className="text-[15px] font-semibold">2D Inspection Mapping</h2>
+            <h2 className="text-[15px] font-semibold">Pemetaan Inspeksi 2D</h2>
             {componentId === null ? (
               <p className="mt-2 text-sm text-[#64748B]">
-                Buat inspection terlebih dahulu, lalu upload drawing di sini.
+                Buat inspeksi terlebih dahulu, lalu unggah gambar di sini.
               </p>
             ) : (
               <>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <label className="cursor-pointer rounded-md border border-[#E2E8F0] px-3 py-1.5 text-sm font-medium hover:bg-[#F5F7FA]">
-                    {gambarUrl ? 'Replace image' : 'Upload image (PNG/JPG)'}
+                    {gambarUrl ? 'Ganti gambar' : 'Unggah gambar (PNG/JPG)'}
                     <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
                   </label>
                 </div>
                 {gambarUrl ? (
                   <div className="mt-3">
-                    <Suspense fallback={<Loading label="Memuat canvas..." />}>
+                    <Suspense fallback={<Loading label="Memuat kanvas..." />}>
                       <MappingCanvas
                         imageUrl={gambarUrl}
                         indications={indications}
@@ -413,7 +414,7 @@ export default function NewInspectionPage() {
                     </Suspense>
                   </div>
                 ) : (
-                  <p className="mt-2 text-sm text-[#64748B]">Belum ada drawing. Upload PNG/JPG untuk mulai mapping.</p>
+                  <p className="mt-2 text-sm text-[#64748B]">Belum ada gambar. Unggah PNG/JPG untuk mulai pemetaan.</p>
                 )}
               </>
             )}
@@ -422,13 +423,13 @@ export default function NewInspectionPage() {
           {addPos && (
             <IndicationModal
               key={`add-${addPos.x}-${addPos.y}`}
-              title="Add Indication"
+              title="Tambah Indikasi"
               coordinateText={`X: ${addPos.x} — Y: ${addPos.y}`}
               initialZona="C"
               initialPanjang=""
               initialLebar=""
               saving={modalSaving}
-              submitLabel="Add Indication"
+              submitLabel="Tambah Indikasi"
               onClose={() => setAddPos(null)}
               onSubmit={handleAddSubmit}
             />
@@ -437,13 +438,13 @@ export default function NewInspectionPage() {
           {editing && (
             <IndicationModal
               key={`edit-${editing.id}`}
-              title={`Edit Indication #${indications.findIndex((i) => i.id === editing.id) + 1}`}
+              title={`Ubah Indikasi #${indications.findIndex((i) => i.id === editing.id) + 1}`}
               coordinateText={`X: ${editing.posisi_x ?? '-'} — Y: ${editing.posisi_y ?? '-'}`}
               initialZona={editing.zona}
               initialPanjang={String(editing.panjang_mm)}
               initialLebar={String(editing.lebar_mm)}
               saving={modalSaving}
-              submitLabel="Save Changes"
+              submitLabel="Simpan Perubahan"
               onClose={() => setEditing(null)}
               onSubmit={handleEditSubmit}
             />
@@ -451,7 +452,7 @@ export default function NewInspectionPage() {
 
           {componentId !== null && (
             <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
-              <h3 className="text-[15px] font-semibold">Indication Details</h3>
+              <h3 className="text-[15px] font-semibold">Detail Indikasi</h3>
               <div className="mt-2">
                 <IndicationTable
                   items={indications}
@@ -465,7 +466,7 @@ export default function NewInspectionPage() {
               </div>
               <div className="mt-3">
                 <Button onClick={handleCalculate} loading={busy} disabled={indications.length === 0}>
-                  Save Inspection (Hitung & Evaluasi)
+                  Simpan Inspeksi (Hitung & Evaluasi)
                 </Button>
               </div>
             </section>

@@ -115,15 +115,15 @@ export default function HistoryPage() {
     }
   }
 
-  if (loading) return <Loading label="Memuat inspection history..." />;
+  if (loading) return <Loading label="Memuat riwayat inspeksi..." />;
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold">Inspection History</h1>
-          <p className="text-sm text-[#64748B]">View and manage completed inspections</p>
+          <h1 className="text-2xl font-semibold">Riwayat Inspeksi</h1>
+          <p className="text-sm text-[#64748B]">Lihat dan kelola inspeksi yang telah selesai</p>
         </div>
         <div className="flex items-center gap-2">
           {selected.size > 0 && (
@@ -140,11 +140,11 @@ export default function HistoryPage() {
             onClick={() =>
               inspectionService
                 .downloadExcel()
-                .catch((err: unknown) => window.alert(err instanceof Error ? err.message : 'Gagal mengunduh Excel.'))
+                .catch((err: unknown) => setDlError(err instanceof Error ? err.message : 'Gagal mengunduh Excel.'))
             }
             className="rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm font-medium hover:bg-[#F5F7FA]"
           >
-            Export Excel
+            Ekspor Excel
           </button>
         </div>
       </div>
@@ -152,18 +152,18 @@ export default function HistoryPage() {
       <div className="flex flex-col gap-2 rounded-lg border border-[#E2E8F0] bg-white p-4 sm:flex-row">
         <div className="flex-1">
             <Input
-              label="Search"
+              label="Cari"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-            placeholder="Search Inspection ID / Component / Inspector..."
+            placeholder="Cari ID Inspeksi / Komponen / Inspektur..."
           />
         </div>
         <div>
           <label htmlFor="result-filter" className="mb-1 block text-[13px] font-medium">
-            Result
+            Hasil
           </label>
           <select
             id="result-filter"
@@ -174,7 +174,7 @@ export default function HistoryPage() {
             }}
             className="rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm"
           >
-            <option value="ALL">All</option>
+            <option value="ALL">Semua</option>
             <option value="ACCEPT">ACC</option>
             <option value="REJECT">REJECT</option>
           </select>
@@ -183,13 +183,13 @@ export default function HistoryPage() {
 
       {filtered.length === 0 ? (
         <EmptyState
-          title="No inspections found."
+          title="Tidak ada inspeksi ditemukan."
           action={
             <Link
               to="/inspection/new"
               className="rounded-md bg-[#0072CE] px-4 py-2 text-sm font-medium text-white hover:bg-[#005B9A]"
             >
-              + New Inspection
+              + Inspeksi Baru
             </Link>
           }
         />
@@ -212,14 +212,14 @@ export default function HistoryPage() {
                       aria-label="Pilih semua di halaman ini"
                     />
                   </th>
-                  <th className="py-2 pr-4 font-medium">Inspection ID</th>
-                  <th className="py-2 pr-4 font-medium">Component</th>
+                  <th className="py-2 pr-4 font-medium">ID Inspeksi</th>
+                  <th className="py-2 pr-4 font-medium">Komponen</th>
                   <th className="py-2 pr-4 font-medium">Upper/Lower</th>
-                  <th className="py-2 pr-4 font-medium">Inspector</th>
+                  <th className="py-2 pr-4 font-medium">Inspektur</th>
                   <th className="py-2 pr-4 font-medium">% Unbound A</th>
                   <th className="py-2 pr-4 font-medium">% Unbound C</th>
-                  <th className="py-2 pr-4 font-medium">Result</th>
-                  <th className="py-2 font-medium">Action</th>
+                  <th className="py-2 pr-4 font-medium">Hasil</th>
+                  <th className="py-2 font-medium">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -245,16 +245,16 @@ export default function HistoryPage() {
                     <td className="py-2">
                       <span className="flex items-center gap-3">
                         <Link to={`/inspection/${r.id}`} className="font-medium text-[#0072CE] hover:underline">
-                          View
+                          Lihat
                         </Link>
                         <button
                           type="button"
                           onClick={() => handleExportPdf(r.id)}
                           disabled={downloadingId !== null}
-                          title="Export laporan PDF baris ini"
+                          title="Ekspor laporan PDF baris ini"
                           className="rounded-md border border-[#0072CE]/40 bg-[#E8F4FC] px-2.5 py-1 text-xs font-semibold text-[#0072CE] hover:bg-[#0072CE] hover:text-white disabled:opacity-40"
                         >
-                          {downloadingId === r.id ? 'Loading…' : 'Export PDF'}
+                          {downloadingId === r.id ? 'Memuat…' : 'Ekspor PDF'}
                         </button>
                       </span>
                     </td>
@@ -265,7 +265,7 @@ export default function HistoryPage() {
           </div>
           <div className="mt-3 flex items-center justify-between text-sm text-[#64748B]">
             <span>
-              Page {safePage} of {totalPages} ({filtered.length} inspections)
+              Halaman {safePage} dari {totalPages} ({filtered.length} inspeksi)
             </span>
             <div className="flex gap-2">
               <button
@@ -274,7 +274,7 @@ export default function HistoryPage() {
                 onClick={() => setPage(safePage - 1)}
                 className="rounded-md border border-[#E2E8F0] px-3 py-1 font-medium text-[#172033] disabled:opacity-40"
               >
-                Prev
+                Sebelumnya
               </button>
               <button
                 type="button"
@@ -282,7 +282,7 @@ export default function HistoryPage() {
                 onClick={() => setPage(safePage + 1)}
                 className="rounded-md border border-[#E2E8F0] px-3 py-1 font-medium text-[#172033] disabled:opacity-40"
               >
-                Next
+                Berikutnya
               </button>
             </div>
           </div>

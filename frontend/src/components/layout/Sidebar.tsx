@@ -3,14 +3,14 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/slices/authSlice';
 
 const MENU = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/inspection/new', label: 'New Inspection' },
-  { to: '/inspection/history', label: 'Inspection History' },
+  { to: '/dashboard', label: 'Dasbor' },
+  { to: '/inspection/new', label: 'Inspeksi Baru' },
+  { to: '/inspection/history', label: 'Riwayat Inspeksi' },
 ];
 
 const ADMIN_MENU = [
-  { to: '/admin/standards', label: 'Manage Standard' },
-  { to: '/admin/users', label: 'Manage User' },
+  { to: '/admin/standards', label: 'Kelola Standar' },
+  { to: '/admin/users', label: 'Kelola Pengguna' },
 ];
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
@@ -61,14 +61,14 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         ))}
       </nav>
       <div className="mt-auto border-t border-[#E2E8F0] pt-3">
-        <p className="px-3 text-xs text-[#64748B]">User Profile</p>
+        <p className="px-3 text-xs text-[#64748B]">Profil Pengguna</p>
         <p className="truncate px-3 py-1 text-sm font-semibold">{user?.username ?? '-'}</p>
         <button
           type="button"
           onClick={handleLogout}
           className="mt-1 w-full rounded-md px-3 py-2 text-left text-sm font-medium text-[#DC2626] hover:bg-[#F5F7FA]"
         >
-          Logout
+          Keluar
         </button>
       </div>
     </aside>

@@ -26,15 +26,15 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit }:
         <thead>
           <tr className="border-b border-[#E2E8F0] text-[#64748B]">
             <th className="py-2 pr-3 font-medium">No</th>
-            <th className="py-2 pr-3 font-medium">Zone</th>
+            <th className="py-2 pr-3 font-medium">Zona</th>
             <th className="py-2 pr-3 font-medium">X</th>
             <th className="py-2 pr-3 font-medium">Y</th>
-            <th className="py-2 pr-3 font-medium">Length (mm)</th>
-            <th className="py-2 pr-3 font-medium">Width (mm)</th>
-            <th className="py-2 pr-3 font-medium">Area (L×W)</th>
+            <th className="py-2 pr-3 font-medium">Panjang (mm)</th>
+            <th className="py-2 pr-3 font-medium">Lebar (mm)</th>
+            <th className="py-2 pr-3 font-medium">Luas (mm²)</th>
             <th className="py-2 pr-3 font-medium">Luas Bond</th>
             <th className="py-2 pr-3 font-medium">%</th>
-            <th className="py-2 font-medium">Action</th>
+            <th className="py-2 font-medium">Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -68,7 +68,7 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit }:
                   }}
                   className="font-medium text-[#0072CE] hover:underline"
                 >
-                  Edit
+                  Ubah
                 </button>
               </td>
             </tr>

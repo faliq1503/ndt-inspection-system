@@ -55,7 +55,8 @@ def generate_pdf_report(result_id: int, hasil: dict, indikasi_list: list) -> str
 
     info_data = [
         ["Jenis Benda", hasil.get("jenis_benda", "-")],
-        ["Diameter", f'{hasil.get("diameter_mm", "-")} mm'],
+        ["Diameter", f'{hasil["diameter_mm"]} mm' if hasil.get("diameter_mm") else "- (P diisi langsung)"],
+        ["Panjang (P)", f'{hasil["p_keliling"]} mm'],
         ["Zona", hasil.get("zona", "-")],
         ["ID Hasil", f'#{result_id}'],
         ["Inspector", hasil.get("inspector") or "-"],

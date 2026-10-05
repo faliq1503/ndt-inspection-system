@@ -27,7 +27,7 @@ export default function DashboardPage() {
         setLoading(false);
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Gagal memuat dashboard.');
+        setError(err instanceof Error ? err.message : 'Gagal memuat dasbor.');
         setLoading(false);
       });
     inspectionService
@@ -50,17 +50,17 @@ export default function DashboardPage() {
 
   const recent = useMemo(() => rows.slice(0, 8), [rows]);
 
-  if (loading) return <Loading label="Memuat dashboard..." />;
+  if (loading) return <Loading label="Memuat dasbor..." />;
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   const cards = [
-    { label: 'Total Inspection', value: String(stats.total) },
+    { label: 'Total Inspeksi', value: String(stats.total) },
     { label: 'ACC', value: String(stats.acc) },
     { label: 'REJECT', value: String(stats.reject) },
     {
-      label: 'Total Indication',
+      label: 'Total Indikasi',
       value: totalIndication === null ? '—' : String(totalIndication),
-      note: totalFailed ? 'Unable to load data' : undefined,
+      note: totalFailed ? 'Gagal memuat data' : undefined,
     },
   ];
 
@@ -68,14 +68,14 @@ export default function DashboardPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-[#64748B]">Overview of NDT inspection activities</p>
+          <h1 className="text-2xl font-semibold">Dasbor</h1>
+          <p className="text-sm text-[#64748B]">Ringkasan aktivitas inspeksi NDT</p>
         </div>
         <Link
           to="/inspection/new"
           className="rounded-md bg-[#0072CE] px-4 py-2 text-sm font-medium text-white hover:bg-[#005B9A]"
         >
-          + New Inspection
+          + Inspeksi Baru
         </Link>
       </div>
 
@@ -90,7 +90,7 @@ export default function DashboardPage() {
       </div>
 
       <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
-        <h2 className="text-[15px] font-semibold">Recent Inspection</h2>
+        <h2 className="text-[15px] font-semibold">Inspeksi Terbaru</h2>
         {recent.length === 0 ? (
           <div className="mt-3">
             <EmptyState
@@ -100,7 +100,7 @@ export default function DashboardPage() {
                   to="/inspection/new"
                   className="rounded-md bg-[#0072CE] px-4 py-2 text-sm font-medium text-white hover:bg-[#005B9A]"
                 >
-                  + New Inspection
+                  + Inspeksi Baru
                 </Link>
               }
             />
@@ -110,13 +110,13 @@ export default function DashboardPage() {
             <table className="w-full whitespace-nowrap text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[#E2E8F0] text-[#64748B]">
-                  <th className="py-2 pr-4 font-medium">Inspection ID</th>
-                  <th className="py-2 pr-4 font-medium">Component</th>
+                  <th className="py-2 pr-4 font-medium">ID Inspeksi</th>
+                  <th className="py-2 pr-4 font-medium">Komponen</th>
                   <th className="py-2 pr-4 font-medium">Upper/Lower</th>
                   <th className="py-2 pr-4 font-medium">% Unbound A</th>
                   <th className="py-2 pr-4 font-medium">% Unbound C</th>
-                  <th className="py-2 pr-4 font-medium">Result</th>
-                  <th className="py-2 font-medium">Action</th>
+                  <th className="py-2 pr-4 font-medium">Hasil</th>
+                  <th className="py-2 font-medium">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -135,7 +135,7 @@ export default function DashboardPage() {
                         to={`/inspection/${r.id}`}
                         className="font-medium text-[#0072CE] hover:underline"
                       >
-                        View
+                        Lihat
                       </Link>
                     </td>
                   </tr>
