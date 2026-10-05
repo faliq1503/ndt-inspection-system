@@ -158,12 +158,12 @@ export default function LoginPage() {
           <h1 className="text-[28px] font-bold leading-tight">NDT Inspection System</h1>
           <p className="mt-3 max-w-[38ch] text-[14px] leading-[1.6] text-white">
             Digitalisasi inspeksi Non-Destructive Testing: mapping indikasi 2D, perhitungan
-            % Unbound, dan evaluasi Acceptance Criteria.
+            % Unbound, dan evaluasi Kriteria Penerimaan.
           </p>
           <div className="mt-6 rounded-xl border border-white/20 bg-white/[0.07] p-4">
             <InspectionSketch />
             <p className="mt-2 text-[13px] tracking-wide text-white/85">
-              Mapping &middot; % Unbound &middot; Acceptance Criteria
+              Mapping &middot; % Unbound &middot; Kriteria Penerimaan
             </p>
           </div>
         </div>
@@ -178,12 +178,12 @@ export default function LoginPage() {
               onSubmit={handleSubmit}
               className="animate-login-rise rounded-[22px] border border-[#E2E8F0]/70 bg-white p-6 shadow-[0_16px_44px_rgba(23,32,51,0.12)] min-[900px]:rounded-2xl min-[900px]:p-10 min-[900px]:shadow-[0_10px_36px_rgba(23,32,51,0.07)]"
             >
-              <h2 className="text-[28px] font-bold leading-tight text-[#172033]">Login</h2>
-              <p className="mb-6 mt-1.5 text-[15px] text-[#475569]">Masuk ke dashboard inspeksi</p>
+              <h2 className="text-[28px] font-bold leading-tight text-[#172033]">Masuk</h2>
+              <p className="mb-6 mt-1.5 text-[15px] text-[#475569]">Masuk ke dasbor inspeksi</p>
 
               <div className="space-y-5">
                 <Input
-                  label="Username"
+                  label="Nama Pengguna"
                   controlSize="lg"
                   leftIcon={<UserIcon />}
                   value={username}
@@ -194,7 +194,7 @@ export default function LoginPage() {
                 />
                 <div className="relative">
                   <Input
-                    label="Password"
+                    label="Kata Sandi"
                     controlSize="lg"
                     leftIcon={<LockIcon />}
                     type={showPassword ? 'text' : 'password'}
@@ -209,8 +209,8 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
                     onMouseDown={(e) => e.preventDefault()}
-                    aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                    title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                    aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                    title={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                     className="absolute bottom-0 right-0 top-[26px] flex w-11 cursor-pointer items-center justify-center rounded-md text-[#64748B] hover:text-[#0072CE] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0072CE]"
                   >
                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
@@ -240,7 +240,7 @@ export default function LoginPage() {
                   loadingText="Masuk..."
                   className="h-[52px] w-full rounded-[12px] text-[15px] font-semibold shadow-[0_6px_16px_rgba(0,114,206,0.28)] transition-transform active:scale-[0.98] min-[900px]:h-[48px] min-[900px]:rounded-[10px] min-[900px]:shadow-none"
                 >
-                  Login
+                  Masuk
                 </Button>
               </div>
             </form>

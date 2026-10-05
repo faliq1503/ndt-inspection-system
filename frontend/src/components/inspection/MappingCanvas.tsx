@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Circle, Group, Image as KonvaImage, Layer, Stage, Text } from 'react-konva';
+import { Group, Image as KonvaImage, Layer, Rect, Stage, Text } from 'react-konva';
 import type Konva from 'konva';
 import type { Indication } from '../../types/index';
 
@@ -10,9 +10,17 @@ import type { Indication } from '../../types/index';
  * - Koordinat yang disimpan = PERSEN 0–100 relatif terhadap ukuran ASLI
  *   gambar (bukan viewport/stage). Zoom & pan hanya mengubah tampilan,
  *   tidak mengubah nilai yang disimpan.
- * - Marker dirender di dalam group yang sama dengan gambar sehingga
- *   selalu mengikuti drawing saat zoom/pan; ukuran visual marker
- *   dibuat konstan lewat counter-scale.
+ * - Marker berupa RECTANGLE merah transparan mengikuti ukuran indikasi:
+ *   sisi horizontal = Panjang (mm), sisi vertikal = Lebar (mm), dengan
+ *   label angka persis nilai tersimpan + nomor urut. Rectangle dirender
+ *   di dalam group yang sama dengan gambar sehingga selalu mengikuti
+ *   drawing saat zoom/pan; label & nomor dibuat berukuran layar konstan
+ *   lewat counter-scale agar selalu terbaca.
+ *
+ *   Skala visual SAJA: drawing dianggap permukaan terbentang P × L mm
+ *   (konsisten dengan definisi geometri backend A_babbit = P × L).
+ *   Tidak dipakai untuk evaluasi apa pun; nilai Panjang/Lebar asli
+ *   tidak diubah.
  */
 
 export interface CanvasPercent {
@@ -28,6 +36,9 @@ interface MappingCanvasProps {
   onCanvasClick: (pos: CanvasPercent) => void;
   /** Sinyal dari tabel: center-kan marker ber-id ini (nonce berubah tiap request). */
   focusRequest: { id: number; nonce: number } | null;
+  /** Dimensi komponen (mm) untuk skala visual rectangle. */
+  diameterMm: number | null;
+  lengthMm: number | null;
 }
 
 const MIN_ZOOM = 0.5;
@@ -37,6 +48,45 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/**
+ * Label anotasi ukuran (teks persis nilai tersimpan) dengan pil putih.
+ * Dirender dalam group counter-scale sehingga ukuran layar konstan
+ * namun posisinya menempel pada rectangle.
+ */
+function DimLabel({
+  x,
+  y,
+  invK,
+  text,
+  align,
+}: {
+  x: number;
+  y: number;
+  invK: number;
+  text: string;
+  align: 'center' | 'right';
+}) {
+  const fs = 11;
+  const w = text.length * fs * 0.62 + 12;
+  const h = fs + 8;
+  const boxX = align === 'center' ? -w / 2 : -w - 5;
+  return (
+    <Group x={x} y={y} scaleX={invK} scaleY={invK}>
+      <Rect x={boxX} y={-h - 5} width={w} height={h} fill="#FFFFFF" opacity={0.92} cornerRadius={3} />
+      <Text
+        text={text}
+        fontSize={fs}
+        fontStyle="bold"
+        fill="#B91C1C"
+        width={w}
+        x={boxX}
+        y={-h - 5 + 4}
+        align="center"
+      />
+    </Group>
+  );
+}
+
 export default function MappingCanvas({
   imageUrl,
   indications,
@@ -44,6 +94,8 @@ export default function MappingCanvas({
   onSelect,
   onCanvasClick,
   focusRequest,
+  diameterMm,
+  lengthMm,
 }: MappingCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -99,6 +151,11 @@ export default function MappingCanvas({
   const k = baseScale * zoom; // skala efektif gambar→stage
   const stageH = Math.max(240, natH * baseScale);
 
+  // Skala visual rectangle: permukaan terbentang P × L mm.
+  const surfP = diameterMm !== null && diameterMm > 0 ? (Math.PI * diameterMm) / 2 : 0;
+  const surfL = lengthMm !== null && lengthMm > 0 ? lengthMm : 0;
+  const hasScale = surfP > 0 && surfL > 0;
+
   /** Stage point -> persen koordinat gambar (0–100). */
   function toPercent(stageX: number, stageY: number): CanvasPercent {
     const px = (stageX - pos.x) / k;
@@ -147,29 +204,29 @@ export default function MappingCanvas({
 
   return (
     <div>
-      <div className="mb-2 flex flex-wrap items-center gap-2" role="toolbar" aria-label="Canvas toolbar">
+      <div className="mb-2 flex flex-wrap items-center gap-2" role="toolbar" aria-label="Toolbar kanvas">
         <button
           type="button"
           onClick={() => zoomAtCenter(1.25)}
           className="rounded-md border border-[#E2E8F0] px-2.5 py-1 text-sm font-medium hover:bg-[#F5F7FA]"
         >
-          Zoom in +
+          Perbesar +
         </button>
         <button
           type="button"
           onClick={() => zoomAtCenter(1 / 1.25)}
           className="rounded-md border border-[#E2E8F0] px-2.5 py-1 text-sm font-medium hover:bg-[#F5F7FA]"
         >
-          Zoom out −
+          Perkecil −
         </button>
         <button
           type="button"
           onClick={resetView}
           className="rounded-md border border-[#E2E8F0] px-2.5 py-1 text-sm font-medium hover:bg-[#F5F7FA]"
         >
-          Reset view
+          Atur Ulang
         </button>
-        <span className="text-xs text-[#64748B]">{Math.round(zoom * 100)}% · drag untuk pan · klik drawing untuk Add Indication</span>
+        <span className="text-xs text-[#64748B]">{Math.round(zoom * 100)}% · geser untuk pan · klik gambar untuk Tambah Indikasi</span>
       </div>
 
       <div
@@ -229,16 +286,19 @@ export default function MappingCanvas({
               {img &&
                 indications.map((ind, i) => {
                   if (ind.posisi_x === null || ind.posisi_y === null) return null;
-                  const px = (ind.posisi_x / 100) * natW;
-                  const py = (ind.posisi_y / 100) * natH;
+                  // Titik tersimpan = TENGAH rectangle (persen → piksel gambar)
+                  const cx = (ind.posisi_x / 100) * natW;
+                  const cy = (ind.posisi_y / 100) * natH;
+                  // Sisi rectangle dari nilai tersimpan (mm → piksel gambar)
+                  const wPx = hasScale ? Math.max((ind.panjang_mm / surfP) * natW, 2) : 24 / k;
+                  const hPx = hasScale ? Math.max((ind.lebar_mm / surfL) * natH, 2) : 24 / k;
+                  const x0 = cx - wPx / 2;
+                  const y0 = cy - hPx / 2;
+                  const pad = 4 / k;
                   const selected = selectedId === ind.id;
                   return (
                     <Group
                       key={ind.id}
-                      x={px}
-                      y={py}
-                      scaleX={1 / k}
-                      scaleY={1 / k}
                       onMouseDown={(e) => {
                         e.cancelBubble = true;
                       }}
@@ -247,23 +307,45 @@ export default function MappingCanvas({
                         onSelect(ind.id);
                       }}
                     >
-                      {selected && <Circle radius={15} stroke="#0072CE" strokeWidth={2} />}
-                      <Circle
-                        radius={10}
-                        fill={selected ? '#0072CE' : '#DC2626'}
-                        stroke="#FFFFFF"
-                        strokeWidth={2}
+                      {selected && (
+                        <Rect
+                          x={x0 - pad}
+                          y={y0 - pad}
+                          width={wPx + pad * 2}
+                          height={hPx + pad * 2}
+                          stroke="#0072CE"
+                          strokeWidth={2.5 / k}
+                        />
+                      )}
+                      <Rect
+                        x={x0}
+                        y={y0}
+                        width={wPx}
+                        height={hPx}
+                        fill="#DC2626"
+                        fillOpacity={0.22}
+                        stroke="#DC2626"
+                        strokeWidth={2 / k}
                       />
-                      <Text
-                        text={String(i + 1)}
-                        fontSize={10}
-                        fontStyle="bold"
-                        fill="#FFFFFF"
-                        width={20}
-                        x={-10}
-                        y={-6}
-                        align="center"
-                      />
+                      {/* Nomor indikasi — ukuran layar konstan, di tengah rectangle */}
+                      <Group x={cx} y={cy} scaleX={1 / k} scaleY={1 / k}>
+                        <Text
+                          text={String(i + 1)}
+                          fontSize={12}
+                          fontStyle="bold"
+                          fill="#FFFFFF"
+                          stroke="#7F1D1D"
+                          strokeWidth={0.8}
+                          width={30}
+                          x={-15}
+                          y={-7}
+                          align="center"
+                        />
+                      </Group>
+                      {/* Label Panjang (nilai persis tersimpan) di sisi atas */}
+                      <DimLabel x={cx} y={y0} invK={1 / k} text={String(ind.panjang_mm)} align="center" />
+                      {/* Label Lebar (nilai persis tersimpan) di sisi kiri */}
+                      <DimLabel x={x0} y={cy} invK={1 / k} text={String(ind.lebar_mm)} align="right" />
                     </Group>
                   );
                 })}

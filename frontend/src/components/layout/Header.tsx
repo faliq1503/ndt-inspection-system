@@ -11,17 +11,17 @@ export default function Header() {
           <p className="text-[15px] font-semibold leading-tight text-[#172033]">
             NDT Inspection System
           </p>
-          <p className="text-xs leading-tight text-[#64748B]">Industrial Inspection Dashboard</p>
+          <p className="text-xs leading-tight text-[#64748B]">Dasbor Inspeksi Industrial</p>
         </div>
         <nav className="ml-auto flex gap-1 md:hidden" aria-label="Navigasi ringkas">
           <Link className="rounded px-2 py-1 text-sm text-[#0072CE]" to="/dashboard">
-            Dashboard
+            Dasbor
           </Link>
           <Link className="rounded px-2 py-1 text-sm text-[#0072CE]" to="/inspection/new">
-            New
+            Baru
           </Link>
           <Link className="rounded px-2 py-1 text-sm text-[#0072CE]" to="/inspection/history">
-            History
+            Riwayat
           </Link>
         </nav>
       </div>

@@ -25,7 +25,7 @@ export default function CalculationSummary({
 
   return (
     <section className="rounded-lg border border-[#E2E8F0] bg-white p-4" aria-label="Hasil perhitungan">
-      <h3 className="text-[15px] font-semibold">Calculation</h3>
+      <h3 className="text-[15px] font-semibold">Perhitungan</h3>
       <dl className="mt-2 divide-y divide-[#E2E8F0] text-sm">
         {rows.map(([k, v]) => (
           <div key={k} className="flex items-center justify-between py-1.5">
@@ -34,7 +34,7 @@ export default function CalculationSummary({
           </div>
         ))}
         <div className="flex items-center justify-between py-1.5">
-          <dt className="text-[#64748B]">Acceptance Criteria (toleransi)</dt>
+          <dt className="text-[#64748B]">Kriteria Penerimaan (toleransi)</dt>
           <dd className="font-medium">
             {standard ? `≤ ${formatNumber(standard.toleransi_persen)} % per zona` : '-'}
           </dd>
