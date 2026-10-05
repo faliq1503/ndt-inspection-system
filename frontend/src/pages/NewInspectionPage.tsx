@@ -409,8 +409,6 @@ export default function NewInspectionPage() {
                         onSelect={(id) => dispatch(selectIndication(id))}
                         onCanvasClick={handleCanvasClick}
                         focusRequest={focusReq}
-                        diameterMm={component?.diameter_mm ?? null}
-                        lengthMm={component?.panjang_l_mm ?? null}
                       />
                     </Suspense>
                   </div>

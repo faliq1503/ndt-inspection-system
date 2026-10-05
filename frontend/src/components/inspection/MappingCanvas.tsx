@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Group, Image as KonvaImage, Layer, Rect, Stage, Text } from 'react-konva';
+import { Ellipse, Group, Image as KonvaImage, Layer, Rect, Stage, Text } from 'react-konva';
 import type Konva from 'konva';
 import type { Indication } from '../../types/index';
 
@@ -10,17 +10,11 @@ import type { Indication } from '../../types/index';
  * - Koordinat yang disimpan = PERSEN 0–100 relatif terhadap ukuran ASLI
  *   gambar (bukan viewport/stage). Zoom & pan hanya mengubah tampilan,
  *   tidak mengubah nilai yang disimpan.
- * - Marker berupa RECTANGLE merah transparan mengikuti ukuran indikasi:
- *   sisi horizontal = Panjang (mm), sisi vertikal = Lebar (mm), dengan
- *   label angka persis nilai tersimpan + nomor urut. Rectangle dirender
- *   di dalam group yang sama dengan gambar sehingga selalu mengikuti
- *   drawing saat zoom/pan; label & nomor dibuat berukuran layar konstan
- *   lewat counter-scale agar selalu terbaca.
- *
- *   Skala visual SAJA: drawing dianggap permukaan terbentang P × L mm
- *   (konsisten dengan definisi geometri backend A_babbit = P × L).
- *   Tidak dipakai untuk evaluasi apa pun; nilai Panjang/Lebar asli
- *   tidak diubah.
+ * - Marker berupa ELIPS lonjong merah (lingkaran tidak sempurna) berukuran
+ *   TETAP di layar (tidak mengikuti nilai Panjang/Lebar), dengan label angka
+ *   persis nilai tersimpan (Panjang di sisi atas, Lebar di sisi kiri) + nomor
+ *   urut. Posisi menempel pada drawing saat zoom/pan; ukuran visual konstan
+ *   lewat counter-scale agar tidak terlalu besar.
  */
 
 export interface CanvasPercent {
@@ -36,9 +30,6 @@ interface MappingCanvasProps {
   onCanvasClick: (pos: CanvasPercent) => void;
   /** Sinyal dari tabel: center-kan marker ber-id ini (nonce berubah tiap request). */
   focusRequest: { id: number; nonce: number } | null;
-  /** Dimensi komponen (mm) untuk skala visual rectangle. */
-  diameterMm: number | null;
-  lengthMm: number | null;
 }
 
 const MIN_ZOOM = 0.5;
@@ -94,8 +85,6 @@ export default function MappingCanvas({
   onSelect,
   onCanvasClick,
   focusRequest,
-  diameterMm,
-  lengthMm,
 }: MappingCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -150,11 +139,6 @@ export default function MappingCanvas({
   const baseScale = stageW / natW;
   const k = baseScale * zoom; // skala efektif gambar→stage
   const stageH = Math.max(240, natH * baseScale);
-
-  // Skala visual rectangle: permukaan terbentang P × L mm.
-  const surfP = diameterMm !== null && diameterMm > 0 ? (Math.PI * diameterMm) / 2 : 0;
-  const surfL = lengthMm !== null && lengthMm > 0 ? lengthMm : 0;
-  const hasScale = surfP > 0 && surfL > 0;
 
   /** Stage point -> persen koordinat gambar (0–100). */
   function toPercent(stageX: number, stageY: number): CanvasPercent {
@@ -286,15 +270,9 @@ export default function MappingCanvas({
               {img &&
                 indications.map((ind, i) => {
                   if (ind.posisi_x === null || ind.posisi_y === null) return null;
-                  // Titik tersimpan = TENGAH rectangle (persen → piksel gambar)
                   const cx = (ind.posisi_x / 100) * natW;
                   const cy = (ind.posisi_y / 100) * natH;
-                  // Sisi rectangle dari nilai tersimpan (mm → piksel gambar)
-                  const wPx = hasScale ? Math.max((ind.panjang_mm / surfP) * natW, 2) : 24 / k;
-                  const hPx = hasScale ? Math.max((ind.lebar_mm / surfL) * natH, 2) : 24 / k;
-                  const x0 = cx - wPx / 2;
-                  const y0 = cy - hPx / 2;
-                  const pad = 4 / k;
+                  const invK = 1 / k;
                   const selected = selectedId === ind.id;
                   return (
                     <Group
@@ -307,28 +285,19 @@ export default function MappingCanvas({
                         onSelect(ind.id);
                       }}
                     >
-                      {selected && (
-                        <Rect
-                          x={x0 - pad}
-                          y={y0 - pad}
-                          width={wPx + pad * 2}
-                          height={hPx + pad * 2}
-                          stroke="#0072CE"
-                          strokeWidth={2.5 / k}
+                      {/* Elips lonjong merah — ukuran layar tetap */}
+                      <Group x={cx} y={cy} scaleX={invK} scaleY={invK}>
+                        {selected && (
+                          <Ellipse radiusX={19} radiusY={16} stroke="#0072CE" strokeWidth={2.5} />
+                        )}
+                        <Ellipse
+                          radiusX={14}
+                          radiusY={11}
+                          fill="#DC2626"
+                          fillOpacity={0.25}
+                          stroke="#DC2626"
+                          strokeWidth={2}
                         />
-                      )}
-                      <Rect
-                        x={x0}
-                        y={y0}
-                        width={wPx}
-                        height={hPx}
-                        fill="#DC2626"
-                        fillOpacity={0.22}
-                        stroke="#DC2626"
-                        strokeWidth={2 / k}
-                      />
-                      {/* Nomor indikasi — ukuran layar konstan, di tengah rectangle */}
-                      <Group x={cx} y={cy} scaleX={1 / k} scaleY={1 / k}>
                         <Text
                           text={String(i + 1)}
                           fontSize={12}
@@ -343,9 +312,9 @@ export default function MappingCanvas({
                         />
                       </Group>
                       {/* Label Panjang (nilai persis tersimpan) di sisi atas */}
-                      <DimLabel x={cx} y={y0} invK={1 / k} text={String(ind.panjang_mm)} align="center" />
+                      <DimLabel x={cx} y={cy - 11 * invK} invK={invK} text={String(ind.panjang_mm)} align="center" />
                       {/* Label Lebar (nilai persis tersimpan) di sisi kiri */}
-                      <DimLabel x={x0} y={cy} invK={1 / k} text={String(ind.lebar_mm)} align="right" />
+                      <DimLabel x={cx - 14 * invK} y={cy} invK={invK} text={String(ind.lebar_mm)} align="right" />
                     </Group>
                   );
                 })}
