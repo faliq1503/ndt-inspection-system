@@ -288,11 +288,11 @@ export default function MappingCanvas({
                       {/* Elips lonjong merah — ukuran layar tetap */}
                       <Group x={cx} y={cy} scaleX={invK} scaleY={invK}>
                         {selected && (
-                          <Ellipse radiusX={19} radiusY={16} stroke="#0072CE" strokeWidth={2.5} />
+                          <Ellipse radiusX={39} radiusY={32} stroke="#0072CE" strokeWidth={2.5} />
                         )}
                         <Ellipse
-                          radiusX={14}
-                          radiusY={11}
+                          radiusX={34}
+                          radiusY={27}
                           fill="#DC2626"
                           fillOpacity={0.25}
                           stroke="#DC2626"
@@ -300,21 +300,21 @@ export default function MappingCanvas({
                         />
                         <Text
                           text={String(i + 1)}
-                          fontSize={12}
+                          fontSize={13}
                           fontStyle="bold"
                           fill="#FFFFFF"
                           stroke="#7F1D1D"
                           strokeWidth={0.8}
-                          width={30}
-                          x={-15}
-                          y={-7}
+                          width={32}
+                          x={-16}
+                          y={-8}
                           align="center"
                         />
                       </Group>
                       {/* Label Panjang (nilai persis tersimpan) di sisi atas */}
-                      <DimLabel x={cx} y={cy - 11 * invK} invK={invK} text={String(ind.panjang_mm)} align="center" />
+                      <DimLabel x={cx} y={cy - 27 * invK} invK={invK} text={String(ind.panjang_mm)} align="center" />
                       {/* Label Lebar (nilai persis tersimpan) di sisi kiri */}
-                      <DimLabel x={cx - 14 * invK} y={cy} invK={invK} text={String(ind.lebar_mm)} align="right" />
+                      <DimLabel x={cx - 34 * invK} y={cy} invK={invK} text={String(ind.lebar_mm)} align="right" />
                     </Group>
                   );
                 })}

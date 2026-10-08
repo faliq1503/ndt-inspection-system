@@ -4,16 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import plnLogo from '../assets/PLN_logo_QC.png';
+import loginPhoto from '../assets/login-page.jpeg';
 import { authService } from '../services/authService';
 import { useAppDispatch } from '../store/hooks';
 import { loginError, loginStart, loginSuccess } from '../store/slices/authSlice';
-
-/** Blueprint grid untuk panel branding desktop. */
-const GRID_BG = {
-  backgroundImage:
-    'linear-gradient(rgba(255,255,255,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px)',
-  backgroundSize: '36px 36px',
-} as const;
 
 /** Varian lebih samar untuk header mobile. */
 const GRID_BG_SOFT = {
@@ -21,30 +15,6 @@ const GRID_BG_SOFT = {
     'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
   backgroundSize: '28px 28px',
 } as const;
-
-/** Sketsa teknis: penampang bearing + marker indikasi (dekoratif). */
-function InspectionSketch() {
-  return (
-    <svg viewBox="0 0 320 150" role="presentation" aria-hidden="true" className="h-auto w-full">
-      <rect x="30" y="30" width="260" height="90" rx="10" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" />
-      <line x1="14" y1="75" x2="306" y2="75" stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeDasharray="6 5" />
-      <line x1="160" y1="14" x2="160" y2="136" stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeDasharray="6 5" />
-      <circle cx="160" cy="75" r="30" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" />
-      <circle cx="160" cy="75" r="8" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" />
-      <line x1="30" y1="134" x2="290" y2="134" stroke="#FFD100" strokeWidth="1" />
-      <line x1="30" y1="129" x2="30" y2="139" stroke="#FFD100" strokeWidth="1" />
-      <line x1="290" y1="129" x2="290" y2="139" stroke="#FFD100" strokeWidth="1" />
-      <g fontFamily="Inter, sans-serif" fontSize="10" fontWeight="bold" textAnchor="middle">
-        <circle cx="96" cy="52" r="10" fill="#FFD100" />
-        <text x="96" y="56" fill="#172033">1</text>
-        <circle cx="216" cy="52" r="10" fill="#FFD100" />
-        <text x="216" y="56" fill="#172033">2</text>
-        <circle cx="248" cy="100" r="10" fill="none" stroke="#FFD100" strokeWidth="1.5" />
-        <text x="248" y="104" fill="#FFD100">3</text>
-      </g>
-    </svg>
-  );
-}
 
 /** Ikon inline yang dipakai bersama: stroke seragam. */
 function Icon({ size = 18, children }: { size?: number; children: React.ReactNode }) {
@@ -147,7 +117,18 @@ export default function LoginPage() {
         className="relative hidden items-center justify-center overflow-hidden bg-[#0072CE] text-white min-[900px]:flex min-[900px]:w-[38%] min-[900px]:px-6 lg:w-[42%]"
         aria-label="Branding NDT Inspection System"
       >
-        <div aria-hidden="true" className="absolute inset-0" style={GRID_BG} />
+        {/* Background foto + overlay biru brand agar teks tetap jelas */}
+        <img
+          src={loginPhoto}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div aria-hidden="true" className="absolute inset-0 bg-[#0072CE]/85" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#005B9A]/70 to-transparent"
+        />
         <div className="relative w-full max-w-[400px] py-12">
           <img
             src={plnLogo}
@@ -160,12 +141,9 @@ export default function LoginPage() {
             Digitalisasi inspeksi Non-Destructive Testing: mapping indikasi 2D, perhitungan
             % Unbound, dan evaluasi Kriteria Penerimaan.
           </p>
-          <div className="mt-6 rounded-xl border border-white/20 bg-white/[0.07] p-4">
-            <InspectionSketch />
-            <p className="mt-2 text-[13px] tracking-wide text-white/85">
-              Mapping &middot; % Unbound &middot; Kriteria Penerimaan
-            </p>
-          </div>
+          <p className="mt-6 text-[13px] tracking-wide text-white/85">
+            Mapping &middot; % Unbound &middot; Kriteria Penerimaan
+          </p>
         </div>
       </aside>
 
