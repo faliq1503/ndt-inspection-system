@@ -30,6 +30,8 @@ interface MappingCanvasProps {
   onCanvasClick: (pos: CanvasPercent) => void;
   /** Sinyal dari tabel: center-kan marker ber-id ini (nonce berubah tiap request). */
   focusRequest: { id: number; nonce: number } | null;
+  /** Mode baca-saja (mis. halaman detail): klik drawing tidak menambah indikasi. */
+  readOnly?: boolean;
 }
 
 const MIN_ZOOM = 0.5;
@@ -85,6 +87,7 @@ export default function MappingCanvas({
   onSelect,
   onCanvasClick,
   focusRequest,
+  readOnly = false,
 }: MappingCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -210,13 +213,13 @@ export default function MappingCanvas({
         >
           Atur Ulang
         </button>
-        <span className="text-xs text-[#64748B]">{Math.round(zoom * 100)}% · geser untuk pan · klik gambar untuk Tambah Indikasi</span>
+        <span className="text-xs text-[#64748B]">{Math.round(zoom * 100)}% · geser untuk pan{readOnly ? '' : ' · klik gambar untuk Tambah Indikasi'}</span>
       </div>
 
       <div
         ref={wrapRef}
         className="overflow-hidden rounded-md border border-[#E2E8F0] bg-[#F5F7FA]"
-        style={{ cursor: 'crosshair' }}
+        style={{ cursor: readOnly ? 'grab' : 'crosshair' }}
       >
         <Stage
           ref={stageRef}
@@ -251,7 +254,7 @@ export default function MappingCanvas({
           }}
           onMouseUp={() => {
             const st = panRef.current;
-            if (st.active && !st.panning && st.onImage) {
+            if (st.active && !st.panning && st.onImage && !readOnly) {
               const stage = stageRef.current;
               const p = stage?.getPointerPosition();
               if (p) onCanvasClick(toPercent(p.x, p.y));

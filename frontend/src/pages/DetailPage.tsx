@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import EmptyState from '../components/common/EmptyState';
 import ErrorState from '../components/common/ErrorState';
@@ -9,6 +9,9 @@ import IndicationTable from '../components/inspection/IndicationTable';
 import { inspectionService } from '../services/inspectionService';
 import type { ComponentDetail, ResultRow } from '../types/index';
 import { formatDate, formatNumber } from '../utils/format';
+
+/** Canvas yang sama dengan New Inspection, dipakai read-only (code-split). */
+const MappingCanvas = lazy(() => import('../components/inspection/MappingCanvas'));
 
 /**
  * Halaman /inspection/:id — :id adalah result id (evaluation_result.id).
@@ -116,20 +119,18 @@ export default function DetailPage() {
         <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
           <h2 className="text-[15px] font-semibold">Gambar Teknik</h2>
           {gambarUrl && component ? (
-            <div className="relative mt-2 inline-block max-w-full overflow-hidden rounded-md border border-[#E2E8F0]">
-              <img src={gambarUrl} alt="Gambar teknik" className="block max-h-[480px] w-auto" />
-              {component.indikasi_list.map((ind, i) =>
-                ind.posisi_x !== null && ind.posisi_y !== null ? (
-                  <span
-                    key={ind.id}
-                    title={`Indikasi ${i + 1} — Zona ${ind.zona}`}
-                    className="absolute flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-[#DC2626] text-[10px] font-bold text-white"
-                    style={{ left: `${ind.posisi_x}%`, top: `${ind.posisi_y}%` }}
-                  >
-                    {i + 1}
-                  </span>
-                ) : null,
-              )}
+            <div className="mt-2">
+              <Suspense fallback={<Loading label="Memuat kanvas..." />}>
+                <MappingCanvas
+                  imageUrl={gambarUrl}
+                  indications={component.indikasi_list}
+                  selectedId={null}
+                  onSelect={() => undefined}
+                  onCanvasClick={() => undefined}
+                  focusRequest={null}
+                  readOnly
+                />
+              </Suspense>
             </div>
           ) : (
             <p className="mt-2 text-sm text-[#64748B]">Gambar tidak tersedia.</p>
