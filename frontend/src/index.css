@@ -18,6 +18,8 @@
   --ndt-danger: #dc2626;
   --ndt-warning: #f59e0b;
   --ndt-info: #0284c7;
+  --ndt-radius: 8px;
+  --ndt-shadow-sm: 0 1px 2px rgba(23, 32, 51, 0.04);
 }
 
 html,
@@ -50,5 +52,25 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   .animate-login-rise {
     animation: ndt-login-rise 0.3s ease-out both;
+  }
+}
+
+/* Cetak halaman detail: hanya konten, tanpa navigasi/aksi */
+@media print {
+  header,
+  aside,
+  button,
+  [role='toolbar'],
+  nav {
+    display: none !important;
+  }
+
+  section {
+    break-inside: avoid;
+  }
+
+  html,
+  body {
+    background: #ffffff;
   }
 }

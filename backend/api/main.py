@@ -346,7 +346,9 @@ def export_pdf(result_id: int):
         raise HTTPException(status_code=404, detail="Hasil tidak ditemukan")
 
     indikasi_list = ambil_indikasi_by_component(hasil["comp_id"])
-    path = generate_pdf_report(result_id, hasil, indikasi_list)
+    comp = ambil_component_by_id(hasil["comp_id"])
+    gambar = comp["gambar_path"] if comp else None
+    path = generate_pdf_report(result_id, hasil, indikasi_list, gambar_filename=gambar)
 
     return FileResponse(path, media_type="application/pdf", filename=f"laporan_ndt_{result_id}.pdf")
 
