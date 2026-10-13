@@ -206,63 +206,87 @@ export default function StandardsPage() {
       <div className="grid gap-4 xl:grid-cols-[380px_1fr]">
         <form
           onSubmit={handleSubmit}
-          className="space-y-3 rounded-lg border border-[#E2E8F0] bg-white p-4"
+          className="space-y-4 rounded-lg border border-[#E2E8F0] bg-white p-4"
         >
           <h2 className="text-[15px] font-semibold">
             {editingId === null ? 'Buat Standar Baru' : `Ubah Standar #${editingId}`}
           </h2>
-          <Input
-            label="Nama Standar"
-            value={form.nama}
-            onChange={(e) => setField('nama', e.target.value)}
-            placeholder="mis. DOD-STD-2183 (SH)"
-          />
-          <Input
-            label="Lebar Zona A (mm)"
-            type="number"
-            step="any"
-            value={form.lebarZonaA}
-            onChange={(e) => setField('lebarZonaA', e.target.value)}
-            hint="Offset Zona C = lebar Zona A × 2."
-          />
-          <Input
-            label="Toleransi Unbond (%)"
-            type="number"
-            step="any"
-            value={form.toleransi}
-            onChange={(e) => setField('toleransi', e.target.value)}
-            hint="Berlaku untuk Zona A dan Zona C."
-          />
-          <Input
-            label="Maks. Dimensi 1 Indikasi Zona A (mm)"
-            type="number"
-            step="any"
-            value={form.individuA}
-            onChange={(e) => setField('individuA', e.target.value)}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Zona C: Maks. Luas (%)"
-              type="number"
-              step="any"
-              value={form.individuCPersen}
-              onChange={(e) => setField('individuCPersen', e.target.value)}
-              hint="Dari luas babbit total."
-            />
-            <Input
-              label="Zona C: Maks. Luas (mm²)"
-              type="number"
-              step="any"
-              value={form.individuCMax}
-              onChange={(e) => setField('individuCMax', e.target.value)}
-              hint="Dipakai yang lebih kecil."
-            />
-          </div>
-          <Input
-            label="Keterangan"
-            value={form.keterangan}
-            onChange={(e) => setField('keterangan', e.target.value)}
-          />
+          <fieldset>
+            <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+              Umum
+            </legend>
+            <div className="space-y-3">
+              <Input
+                label="Nama Standar"
+                value={form.nama}
+                onChange={(e) => setField('nama', e.target.value)}
+                placeholder="mis. DOD-STD-2183 (SH)"
+              />
+              <Input
+                label="Toleransi Unbond"
+                type="number"
+                step="any"
+                suffix="%"
+                value={form.toleransi}
+                onChange={(e) => setField('toleransi', e.target.value)}
+                hint="Berlaku untuk Zona A dan Zona C."
+              />
+              <Input
+                label="Keterangan"
+                value={form.keterangan}
+                onChange={(e) => setField('keterangan', e.target.value)}
+              />
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+              Zona A
+            </legend>
+            <div className="space-y-3">
+              <Input
+                label="Lebar Zona A"
+                type="number"
+                step="any"
+                suffix="mm"
+                value={form.lebarZonaA}
+                onChange={(e) => setField('lebarZonaA', e.target.value)}
+                hint="Offset Zona C = lebar Zona A × 2."
+              />
+              <Input
+                label="Maks. Dimensi 1 Indikasi Zona A"
+                type="number"
+                step="any"
+                suffix="mm"
+                value={form.individuA}
+                onChange={(e) => setField('individuA', e.target.value)}
+              />
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+              Zona C
+            </legend>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Maks. Luas"
+                type="number"
+                step="any"
+                suffix="%"
+                value={form.individuCPersen}
+                onChange={(e) => setField('individuCPersen', e.target.value)}
+                hint="Dari luas babbit total."
+              />
+              <Input
+                label="Maks. Luas"
+                type="number"
+                step="any"
+                suffix="mm²"
+                value={form.individuCMax}
+                onChange={(e) => setField('individuCMax', e.target.value)}
+                hint="Dipakai yang lebih kecil."
+              />
+            </div>
+          </fieldset>
           <div className="flex gap-2">
             {editingId !== null && (
               <Button variant="secondary" onClick={cancelEdit}>
@@ -273,43 +297,72 @@ export default function StandardsPage() {
               {editingId === null ? 'Buat Standar' : 'Simpan Perubahan'}
             </Button>
           </div>
-          <p className="text-xs text-[#64748B]">
-            Untuk versi standar baru, lebih aman membuat standar baru daripada mengubah yang lama.
-            Menghitung ulang komponen lama akan memakai nilai terbaru.
-          </p>
+          <div className="flex items-start gap-2 rounded-md border border-[#0072CE]/25 bg-[#E8F4FC] px-3 py-2.5" role="note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#005B9A" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="mt-0.5 shrink-0">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <p className="text-[13px] leading-relaxed text-[#005B9A]">
+              Untuk versi standar baru, lebih aman membuat standar baru daripada mengubah yang lama.
+              Menghitung ulang komponen lama akan memakai nilai terbaru.
+            </p>
+          </div>
         </form>
 
         <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
           <h2 className="text-[15px] font-semibold">Daftar Standar</h2>
+          {standards.length === 0 ? (
+            <p className="py-6 text-center text-sm text-[#64748B]">Belum ada standar.</p>
+          ) : (
           <div className="mt-2 overflow-x-auto">
             <table className="w-full whitespace-nowrap text-left text-[13px]">
               <thead>
-                <tr className="border-b border-[#E2E8F0] text-[#64748B]">
+                <tr className="border-b border-[#E2E8F0] text-xs text-[#64748B]">
                   <th className="py-2 pr-4 font-medium">Nama</th>
-                  <th className="py-2 pr-4 font-medium">Zona A (mm)</th>
-                  <th className="py-2 pr-4 font-medium">Toleransi</th>
-                  <th className="py-2 pr-4 font-medium">Indikasi A</th>
-                  <th className="py-2 pr-4 font-medium">Indikasi C</th>
+                  <th className="py-2 pr-4 text-right font-medium">Zona A</th>
+                  <th className="py-2 pr-4 text-right font-medium">Toleransi</th>
+                  <th className="py-2 pr-4 text-right font-medium">Indikasi A</th>
+                  <th className="py-2 pr-4 text-right font-medium">Indikasi C</th>
                   <th className="py-2 font-medium">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {standards.map((s) => (
-                  <tr key={s.id} className="border-b border-[#E2E8F0] last:border-0">
-                    <td className="py-2 pr-4 font-medium">{s.nama_standard}</td>
-                    <td className="py-2 pr-4">{s.lebar_zona_a_mm}</td>
-                    <td className="py-2 pr-4">{s.toleransi_persen} %</td>
-                    <td className="py-2 pr-4">≤ {s.individu_zona_a_mm} mm</td>
-                    <td className="py-2 pr-4">
-                      ≤ {s.individu_zona_c_persen} % / {s.individu_zona_c_max_mm2} mm²
+                  <tr key={s.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#E8F4FC]">
+                    <td className="py-2 pr-4 font-semibold">{s.nama_standard}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums">
+                      {s.lebar_zona_a_mm} <span className="text-[#64748B]">mm</span>
+                    </td>
+                    <td className="py-2 pr-4 text-right tabular-nums">
+                      {s.toleransi_persen} <span className="text-[#64748B]">%</span>
+                    </td>
+                    <td className="py-2 pr-4 text-right tabular-nums">
+                      ≤ {s.individu_zona_a_mm} <span className="text-[#64748B]">mm</span>
+                    </td>
+                    <td className="py-2 pr-4 text-right tabular-nums">
+                      <span className="block">≤ {s.individu_zona_c_persen} <span className="text-[#64748B]">%</span></span>
+                      <span className="block text-[#64748B]">{s.individu_zona_c_max_mm2} mm²</span>
                     </td>
                     <td className="py-2">
                     <div className="flex gap-2">
                         <Button variant="secondary" onClick={() => startEdit(s)}>
-                          Ubah
+                          <span className="inline-flex items-center gap-1">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                            </svg>
+                            Ubah
+                          </span>
                         </Button>
-                        <Button variant="secondary" onClick={() => setDeleteTarget(s)}>
-                          Hapus
+                        <Button variant="destructive" onClick={() => setDeleteTarget(s)}>
+                          <span className="inline-flex items-center gap-1">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                            Hapus
+                          </span>
                         </Button>
                       </div>
                     </td>
@@ -318,6 +371,7 @@ export default function StandardsPage() {
               </tbody>
             </table>
           </div>
+          )}
         </section>
       </div>
     </div>

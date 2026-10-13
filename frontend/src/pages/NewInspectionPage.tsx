@@ -49,6 +49,8 @@ export default function NewInspectionPage() {
   const [editing, setEditing] = useState<Indication | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
   const [focusReq, setFocusReq] = useState<{ id: number; nonce: number } | null>(null);
+  // Toast kecil untuk notifikasi sukses (otomatis hilang)
+  const [toast, setToast] = useState<string | null>(null);
 
   function loadStandards() {
     setStandardsLoading(true);
@@ -68,6 +70,12 @@ export default function NewInspectionPage() {
   useEffect(() => {
     loadStandards();
   }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   async function refreshComponent(id: number) {
     const detail = await inspectionService.getComponent(id);
@@ -133,7 +141,7 @@ export default function NewInspectionPage() {
     try {
       await inspectionService.uploadImage(componentId, file);
       await refreshComponent(componentId);
-      setNotice('Gambar berhasil diunggah.');
+      setToast('Gambar berhasil diunggah.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal mengunggah gambar.');
     } finally {
@@ -223,6 +231,21 @@ export default function NewInspectionPage() {
   const gambarUrl = inspectionService.imageUrl(component?.gambar_path ?? null);
   const activeStandard = standards.find((s) => s.id === form.standardId);
 
+  // Stepper mengikuti kondisi nyata: Data → Pemetaan → Hasil
+  const steps = [
+    { n: 1, label: 'Data', state: componentId !== null ? 'done' : 'active' },
+    {
+      n: 2,
+      label: 'Pemetaan',
+      state: componentId === null ? 'todo' : indications.length > 0 ? 'done' : 'active',
+    },
+    {
+      n: 3,
+      label: 'Hasil',
+      state: result !== null ? 'done' : componentId !== null && indications.length > 0 ? 'active' : 'todo',
+    },
+  ] as Array<{ n: number; label: string; state: 'todo' | 'active' | 'done' }>;
+
   if (standardsLoading) return <Loading label="Memuat standar..." />;
   if (standardsError) return <ErrorState message={standardsError} onRetry={loadStandards} />;
 
@@ -251,114 +274,170 @@ export default function NewInspectionPage() {
         </p>
       )}
 
+      {componentId !== null && (
+        <ol className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3 sm:gap-2" aria-label="Tahapan inspeksi">
+          {steps.map((s, idx) => (
+            <li key={s.n} className="flex min-w-0 flex-1 items-center gap-2 last:flex-none">
+              <span
+                aria-current={s.state === 'active' ? 'step' : undefined}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${
+                  s.state === 'done'
+                    ? 'bg-[#0072CE] text-white'
+                    : s.state === 'active'
+                      ? 'border-2 border-[#0072CE] text-[#0072CE]'
+                      : 'border border-[#E2E8F0] text-[#64748B]'
+                }`}
+              >
+                {s.state === 'done' ? '✓' : s.n}
+              </span>
+              <span
+                className={`truncate text-[13px] font-medium ${
+                  s.state === 'todo' ? 'text-[#64748B]' : 'text-[#172033]'
+                }`}
+              >
+                {s.label}
+              </span>
+              {idx < steps.length - 1 && (
+                <span aria-hidden="true" className="mx-1 h-px min-w-3 flex-1 bg-[#E2E8F0] sm:min-w-6" />
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+
       <div className="grid gap-4 xl:grid-cols-[380px_1fr]">
         {/* Kolom kiri: form + calculation */}
         <div className="space-y-4">
           <form
             onSubmit={handleCreate}
-            className="space-y-3 rounded-lg border border-[#E2E8F0] bg-white p-4"
+            className="space-y-4 rounded-lg border border-[#E2E8F0] bg-white p-4"
           >
             <h2 className="text-[15px] font-semibold">Data Inspeksi</h2>
-            <Input
-              label="Komponen / Tipe Objek"
-              value={form.jenisBenda}
-              onChange={(e) => dispatch(setForm({ jenisBenda: e.target.value }))}
-              placeholder="mis. Bearing"
-            />
-            <label className="flex items-center gap-2 text-sm text-[#172033]">
-              <input
-                type="checkbox"
-                checked={form.pakaiPManual}
-                onChange={(e) => dispatch(setForm({ pakaiPManual: e.target.checked }))}
+
+            <fieldset>
+              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+                Identitas Komponen
+              </legend>
+              <Input
+                label="Komponen / Tipe Objek"
+                value={form.jenisBenda}
+                onChange={(e) => dispatch(setForm({ jenisBenda: e.target.value }))}
+                placeholder="mis. Bearing"
               />
-              Komponen berbentuk pad/sepatu (isi P langsung, bukan Diameter)
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {form.pakaiPManual ? (
+            </fieldset>
+
+            <fieldset>
+              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+                Dimensi
+              </legend>
+              <label className="mb-2 flex items-center gap-2 text-sm text-[#172033]">
+                <input
+                  type="checkbox"
+                  checked={form.pakaiPManual}
+                  onChange={(e) => dispatch(setForm({ pakaiPManual: e.target.checked }))}
+                  className="h-4 w-4 accent-[#0072CE]"
+                />
+                Komponen berbentuk pad/sepatu (isi P langsung, bukan Diameter)
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {form.pakaiPManual ? (
+                  <Input
+                    label="P / Keliling Pad"
+                    type="number"
+                    step="any"
+                    suffix="mm"
+                    value={form.panjangPManual}
+                    onChange={(e) => dispatch(setForm({ panjangPManual: e.target.value }))}
+                    placeholder="150"
+                    hint="Diisi langsung, tidak dihitung dari Diameter."
+                  />
+                ) : (
+                  <Input
+                    label="Diameter"
+                    type="number"
+                    step="any"
+                    suffix="mm"
+                    value={form.diameterMm}
+                    onChange={(e) => dispatch(setForm({ diameterMm: e.target.value }))}
+                    placeholder="360"
+                  />
+                )}
                 <Input
-                  label="P / Keliling Pad (mm)"
+                  label="Panjang"
                   type="number"
                   step="any"
-                  value={form.panjangPManual}
-                  onChange={(e) => dispatch(setForm({ panjangPManual: e.target.value }))}
-                  placeholder="150"
-                  hint="Diisi langsung, tidak dihitung dari Diameter."
+                  suffix="mm"
+                  value={form.panjangLMm}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    dispatch(setForm({ panjangLMm: value }));
+                    const n = parseFloat(value);
+                    if (!Number.isNaN(n)) dispatch(suggestLebarZonaA(n));
+                  }}
+                  placeholder="101"
                 />
-              ) : (
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+                Pengaturan Inspeksi
+              </legend>
+              <div className="space-y-3">
                 <Input
-                  label="Diameter (mm)"
+                  label="Lebar Zona A"
                   type="number"
                   step="any"
-                  value={form.diameterMm}
-                  onChange={(e) => dispatch(setForm({ diameterMm: e.target.value }))}
-                  placeholder="360"
+                  suffix="mm"
+                  value={form.lebarZonaA}
+                  onChange={(e) =>
+                    dispatch(setForm({ lebarZonaA: e.target.value, lebarZonaATouched: true }))
+                  }
+                  hint="Default 10% dari Panjang (DOD-STD-2183). Boleh diubah manual, mis. untuk pad/sepatu."
                 />
-              )}
+                <div>
+                  <label htmlFor="bearing-inspection" className="mb-1.5 block text-sm font-medium text-[#172033]">
+                    Bearing Inspection
+                  </label>
+                  <select
+                    id="bearing-inspection"
+                    value={form.zona}
+                    onChange={(e) => dispatch(setForm({ zona: e.target.value }))}
+                    className="w-full rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#172033] focus:border-[#0072CE] focus:outline-none focus:ring-[3px] focus:ring-[#0072CE]/15"
+                  >
+                    <option value="">-- Pilih bearing inspection --</option>
+                    <option value="Upper">Upper</option>
+                    <option value="Lower">Lower</option>
+                  </select>
+                </div>
                 <Input
-                  label="Panjang (mm)"
-                type="number"
-                step="any"
-                value={form.panjangLMm}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  dispatch(setForm({ panjangLMm: value }));
-                  const n = parseFloat(value);
-                  if (!Number.isNaN(n)) dispatch(suggestLebarZonaA(n));
-                }}
-                placeholder="101"
-              />
-            </div>
-            <Input
-              label="Lebar Zona A (mm)"
-              type="number"
-              step="any"
-              value={form.lebarZonaA}
-              onChange={(e) =>
-                dispatch(setForm({ lebarZonaA: e.target.value, lebarZonaATouched: true }))
-              }
-              hint="Default 10% dari Panjang (DOD-STD-2183). Boleh diubah manual, mis. untuk pad/sepatu."
-            />
-            <div>
-              <label htmlFor="bearing-inspection" className="mb-1 block text-sm font-medium text-[#172033]">
-                Bearing Inspection
-              </label>
-              <select
-                id="bearing-inspection"
-                value={form.zona}
-                onChange={(e) => dispatch(setForm({ zona: e.target.value }))}
-                className="w-full rounded-md border border-[#D0D9EA] bg-white px-3 py-2 text-sm text-[#172033] focus:border-[#0072CE] focus:outline-none focus:ring-[3px] focus:ring-[#0072CE]/15"
-              >
-                <option value="">-- Pilih bearing inspection --</option>
-                <option value="Upper">Upper</option>
-                <option value="Lower">Lower</option>
-              </select>
-            </div>
-            <Input
-              label="Inspektur"
-              value={user?.username ?? ''}
-              readOnly
-              hint="Otomatis dari akun yang sedang login."
-            />
-            <div>
-              <label htmlFor="standard" className="mb-1 block text-[13px] font-medium">
-                Standar
-              </label>
-              <select
-                id="standard"
-                value={form.standardId}
-                onChange={(e) =>
-                  dispatch(setForm({ standardId: e.target.value === '' ? '' : Number(e.target.value) }))
-                }
-                className="w-full rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm focus:border-[#0072CE] focus:outline-none"
-              >
-                <option value="">-- Pilih standar --</option>
-                {standards.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nama_standard} (toleransi {s.toleransi_persen}%)
-                  </option>
-                ))}
-              </select>
-            </div>
+                  label="Inspektur"
+                  value={user?.username ?? ''}
+                  readOnly
+                  hint="Otomatis dari akun yang sedang login."
+                />
+                <div>
+                  <label htmlFor="standard" className="mb-1.5 block text-sm font-medium text-[#172033]">
+                    Standar
+                  </label>
+                  <select
+                    id="standard"
+                    value={form.standardId}
+                    onChange={(e) =>
+                      dispatch(setForm({ standardId: e.target.value === '' ? '' : Number(e.target.value) }))
+                    }
+                    className="w-full rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#172033] focus:border-[#0072CE] focus:outline-none focus:ring-[3px] focus:ring-[#0072CE]/15"
+                  >
+                    <option value="">-- Pilih standar --</option>
+                    {standards.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.nama_standard} (toleransi {s.toleransi_persen}%)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </fieldset>
             <Button type="submit" loading={busy} className="w-full">
               {componentId === null ? 'Buat Inspeksi' : 'Perbarui & Buat Ulang'}
             </Button>
@@ -366,16 +445,16 @@ export default function NewInspectionPage() {
 
           {result && (
             <>
-              <CalculationSummary result={result} standard={activeStandard} />
-              <EvaluationResultCard result={result} />
+              <CalculationSummary result={result} standard={activeStandard} emphasize />
+              <EvaluationResultCard result={result} size="lg" />
               <div className="flex gap-2">
                 <Link
                   to="/inspection/history"
-                  className="flex-1 rounded-md border border-[#E2E8F0] bg-white px-4 py-2 text-center text-sm font-medium hover:bg-[#F5F7FA]"
+                  className="flex-1 rounded-md border border-[#E2E8F0] bg-white px-4 py-2 text-center text-sm font-medium text-[#172033] hover:bg-[#E8F4FC]"
                 >
                   Lihat Riwayat
                 </Link>
-                <Button variant="secondary" onClick={handleReset} className="flex-1">
+                <Button onClick={handleReset} className="flex-1">
                   Simpan & Baru
                 </Button>
               </div>
@@ -388,32 +467,77 @@ export default function NewInspectionPage() {
           <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
             <h2 className="text-[15px] font-semibold">Pemetaan Inspeksi 2D</h2>
             {componentId === null ? (
-              <p className="mt-2 text-sm text-[#64748B]">
-                Buat inspeksi terlebih dahulu, lalu unggah gambar di sini.
-              </p>
+              <div className="mt-3 flex flex-col items-center rounded-lg border border-dashed border-[#E2E8F0] bg-[#F5F7FA] px-4 py-10 text-center">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+                <p className="mt-3 text-sm font-medium text-[#172033]">Belum ada inspeksi</p>
+                <p className="mt-1 max-w-xs text-[13px] text-[#64748B]">
+                  Buat inspeksi terlebih dahulu, lalu unggah gambar di sini.
+                </p>
+              </div>
             ) : (
               <>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <label className="cursor-pointer rounded-md border border-[#E2E8F0] px-3 py-1.5 text-sm font-medium hover:bg-[#F5F7FA]">
-                    {gambarUrl ? 'Ganti gambar' : 'Unggah gambar (PNG/JPG)'}
-                    <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
-                  </label>
-                </div>
                 {gambarUrl ? (
-                  <div className="mt-3">
-                    <Suspense fallback={<Loading label="Memuat kanvas..." />}>
-                      <MappingCanvas
-                        imageUrl={gambarUrl}
-                        indications={indications}
-                        selectedId={selectedId}
-                        onSelect={(id) => dispatch(selectIndication(id))}
-                        onCanvasClick={handleCanvasClick}
-                        focusRequest={focusReq}
-                      />
-                    </Suspense>
-                  </div>
+                  <>
+                    <div className="mt-2 flex items-center gap-2 rounded-md border border-[#0284C7]/25 bg-[#0284C7]/[0.07] px-3 py-2 text-[13px] text-[#0284C7]" role="note">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="shrink-0">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                      Geser untuk pan · Klik gambar untuk menambahkan indikasi.
+                    </div>
+                    <div className="mt-3 max-h-[620px] overflow-auto rounded-md">
+                      <Suspense fallback={<Loading label="Memuat kanvas..." />}>
+                        <MappingCanvas
+                          imageUrl={gambarUrl}
+                          indications={indications}
+                          selectedId={selectedId}
+                          onSelect={(id) => dispatch(selectIndication(id))}
+                          onCanvasClick={handleCanvasClick}
+                          focusRequest={focusReq}
+                          showHint={false}
+                          toolbarExtra={
+                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-[#E2E8F0] bg-white px-2.5 py-1 text-sm font-medium text-[#172033] hover:bg-[#E8F4FC]" title="Ganti gambar drawing">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <path d="M17 8l-5-5-5 5" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                              </svg>
+                              Ganti Gambar
+                              <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
+                            </label>
+                          }
+                        />
+                      </Suspense>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-[#64748B]" aria-label="Legenda marker">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span aria-hidden="true" className="inline-block h-3 w-4 rounded-full border-2 border-[#DC2626] bg-[#DC2626]/25" />
+                        Indikasi
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span aria-hidden="true" className="inline-block h-3 w-4 rounded-full border-2 border-[#0072CE]" />
+                        Terpilih
+                      </span>
+                    </div>
+                  </>
                 ) : (
-                  <p className="mt-2 text-sm text-[#64748B]">Belum ada gambar. Unggah PNG/JPG untuk mulai pemetaan.</p>
+                  <div className="mt-3">
+                    <label className="flex cursor-pointer flex-col items-center rounded-lg border border-dashed border-[#E2E8F0] bg-[#F5F7FA] px-4 py-10 text-center hover:border-[#0072CE]/50 hover:bg-[#E8F4FC]/50">
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0072CE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <path d="M17 8l-5-5-5 5" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                      <span className="mt-3 text-sm font-medium text-[#172033]">Unggah gambar (PNG/JPG)</span>
+                      <span className="mt-1 text-xs text-[#64748B]">Maksimal 10 MB · klik untuk memilih file</span>
+                      <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
+                    </label>
+                  </div>
                 )}
               </>
             )}
@@ -464,7 +588,17 @@ export default function NewInspectionPage() {
                 />
               </div>
               <div className="mt-3">
-                <Button onClick={handleCalculate} loading={busy} disabled={indications.length === 0}>
+                <Button
+                  onClick={handleCalculate}
+                  loading={busy}
+                  disabled={indications.length === 0}
+                  variant={indications.length === 0 ? 'secondary' : 'primary'}
+                  className={
+                    indications.length === 0
+                      ? 'cursor-not-allowed bg-[#F5F7FA] text-[#64748B] hover:bg-[#F5F7FA]'
+                      : ''
+                  }
+                >
                   Simpan Inspeksi (Hitung & Evaluasi)
                 </Button>
               </div>
@@ -472,6 +606,17 @@ export default function NewInspectionPage() {
           )}
         </div>
       </div>
+      {toast && (
+        <div
+          role="status"
+          className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-lg border border-[#16A34A]/30 bg-white px-4 py-2.5 text-sm font-medium text-[#16A34A] shadow-[0_8px_24px_rgba(23,32,51,0.12)]"
+        >
+          <span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full bg-[#16A34A] text-xs font-bold text-white">
+            ✓
+          </span>
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

@@ -22,8 +22,7 @@ export default function HistoryPage() {
   const [page, setPage] = useState(1);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [dlError, setDlError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ResultRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   function load() {
@@ -59,46 +58,30 @@ export default function HistoryPage() {
     });
   }, [rows, search, filter]);
 
-  useEffect(() => {
-    setSelected(new Set());
-  }, [search, filter]);
-
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  function toggleSelect(id: number) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
+  /** Nomor halaman aktual (jendela maks. 5 di sekitar halaman aktif). */
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const start = Math.min(Math.max(safePage - 2, 1), totalPages - 4);
+    return Array.from({ length: 5 }, (_, i) => start + i);
+  }, [totalPages, safePage]);
 
-  function toggleSelectAllOnPage() {
-    const pageIds = pageRows.map((r) => r.id);
-    const allSelected = pageIds.every((id) => selected.has(id));
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allSelected) pageIds.forEach((id) => next.delete(id));
-      else pageIds.forEach((id) => next.add(id));
-      return next;
-    });
-  }
-
-  async function handleBulkDelete() {
+  /** Hapus satu inspeksi via endpoint bulk yang sudah ada. */
+  async function handleDelete() {
+    if (!deleteTarget) return;
     setDeleting(true);
     setDlError(null);
     try {
-      await inspectionService.bulkDeleteResults(Array.from(selected));
-      setSelected(new Set());
+      await inspectionService.bulkDeleteResults([deleteTarget.id]);
       load();
     } catch (err) {
       setDlError(err instanceof Error ? err.message : 'Gagal menghapus inspeksi.');
     } finally {
       setDeleting(false);
-      setConfirmDelete(false);
+      setDeleteTarget(null);
     }
   }
 
@@ -126,15 +109,6 @@ export default function HistoryPage() {
           <p className="text-sm text-[#64748B]">Lihat dan kelola inspeksi yang telah selesai</p>
         </div>
         <div className="flex items-center gap-2">
-          {selected.size > 0 && (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="rounded-md border border-[#DC2626]/40 bg-[#DC2626]/10 px-3 py-2 text-sm font-medium text-[#DC2626] hover:bg-[#DC2626] hover:text-white"
-            >
-              Hapus Terpilih ({selected.size})
-            </button>
-          )}
           <button
             type="button"
             onClick={() =>
@@ -142,8 +116,13 @@ export default function HistoryPage() {
                 .downloadExcel()
                 .catch((err: unknown) => setDlError(err instanceof Error ? err.message : 'Gagal mengunduh Excel.'))
             }
-            className="rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm font-medium hover:bg-[#F5F7FA]"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm font-medium text-[#172033] hover:bg-[#E8F4FC]"
           >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <path d="M7 10l5 5 5-5" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
             Ekspor Excel
           </button>
         </div>
@@ -158,8 +137,14 @@ export default function HistoryPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-            placeholder="Cari ID Inspeksi / Komponen / Inspektur..."
-          />
+              placeholder="Cari ID Inspeksi / Komponen / Inspektur..."
+              leftIcon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <line x1="21" y1="21" x2="16.5" y2="16.5" />
+                </svg>
+              }
+            />
         </div>
         <div>
           <label htmlFor="result-filter" className="mb-1 block text-[13px] font-medium">
@@ -182,17 +167,36 @@ export default function HistoryPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState
-          title="Tidak ada inspeksi ditemukan."
-          action={
-            <Link
-              to="/inspection/new"
-              className="rounded-md bg-[#0072CE] px-4 py-2 text-sm font-medium text-white hover:bg-[#005B9A]"
-            >
-              + Inspeksi Baru
-            </Link>
-          }
-        />
+        rows.length === 0 ? (
+          <EmptyState
+            title="Belum ada riwayat inspeksi."
+            action={
+              <Link
+                to="/inspection/new"
+                className="rounded-md bg-[#0072CE] px-4 py-2 text-sm font-medium text-white hover:bg-[#005B9A]"
+              >
+                + Inspeksi Baru
+              </Link>
+            }
+          />
+        ) : (
+          <EmptyState
+            title="Tidak ada hasil yang cocok dengan pencarian."
+            action={
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setFilter('ALL');
+                  setPage(1);
+                }}
+                className="rounded-md border border-[#E2E8F0] bg-white px-4 py-2 text-sm font-medium text-[#172033] hover:bg-[#E8F4FC]"
+              >
+                Atur Ulang Pencarian
+              </button>
+            }
+          />
+        )
       ) : (
         <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
           {dlError && (
@@ -203,58 +207,72 @@ export default function HistoryPage() {
           <div className="overflow-x-auto">
             <table className="w-full whitespace-nowrap text-left text-[13px]">
               <thead>
-                <tr className="border-b border-[#E2E8F0] text-[#64748B]">
-                  <th className="py-2 pr-3">
-                    <input
-                      type="checkbox"
-                      checked={pageRows.length > 0 && pageRows.every((r) => selected.has(r.id))}
-                      onChange={toggleSelectAllOnPage}
-                      aria-label="Pilih semua di halaman ini"
-                    />
-                  </th>
+                <tr className="border-b border-[#E2E8F0] text-xs text-[#64748B]">
                   <th className="py-2 pr-4 font-medium">ID Inspeksi</th>
                   <th className="py-2 pr-4 font-medium">Komponen</th>
                   <th className="py-2 pr-4 font-medium">Upper/Lower</th>
                   <th className="py-2 pr-4 font-medium">Inspektur</th>
-                  <th className="py-2 pr-4 font-medium">% Unbound A</th>
-                  <th className="py-2 pr-4 font-medium">% Unbound C</th>
+                  <th className="py-2 pr-4 text-right font-medium">% Unbound A</th>
+                  <th className="py-2 pr-4 text-right font-medium">% Unbound C</th>
                   <th className="py-2 pr-4 font-medium">Hasil</th>
                   <th className="py-2 font-medium">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {pageRows.map((r) => (
-                  <tr key={r.id} className="border-b border-[#E2E8F0] last:border-0">
-                    <td className="py-2 pr-3">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(r.id)}
-                        onChange={() => toggleSelect(r.id)}
-                        aria-label={`Pilih inspeksi #${r.id}`}
-                      />
-                    </td>
-                    <td className="py-2 pr-4 font-medium">#{r.id}</td>
-                    <td className="py-2 pr-4">{r.jenis_benda}</td>
-                    <td className="py-2 pr-4">{r.zona}</td>
+                  <tr key={r.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#E8F4FC]">
+                    <td className="py-2 pr-4 font-semibold text-[#0072CE]">#{r.id}</td>
+                    <td className="py-2 pr-4 capitalize">{r.jenis_benda}</td>
+                    <td className="py-2 pr-4">{r.zona && r.zona.trim() ? r.zona : '—'}</td>
                     <td className="py-2 pr-4">{r.inspector ?? '-'}</td>
-                    <td className="py-2 pr-4">{formatNumber(r.persen_unbond_zone_a)} %</td>
-                    <td className="py-2 pr-4">{formatNumber(r.persen_unbond_zone_c)} %</td>
+                    <td className="py-2 pr-4 text-right tabular-nums">{formatNumber(r.persen_unbond_zone_a)} %</td>
+                    <td className="py-2 pr-4 text-right tabular-nums">{formatNumber(r.persen_unbond_zone_c)} %</td>
                     <td className="py-2 pr-4">
                       <StatusBadge status={r.status} />
                     </td>
                     <td className="py-2">
-                      <span className="flex items-center gap-3">
-                        <Link to={`/inspection/${r.id}`} className="font-medium text-[#0072CE] hover:underline">
-                          Lihat
+                      <span className="flex items-center gap-1">
+                        <Link
+                          to={`/inspection/${r.id}`}
+                          title={`Detail inspeksi #${r.id}`}
+                          aria-label={`Detail inspeksi #${r.id}`}
+                          className="rounded-md p-1.5 text-[#0072CE] hover:bg-[#E8F4FC]"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
                         </Link>
                         <button
                           type="button"
                           onClick={() => handleExportPdf(r.id)}
                           disabled={downloadingId !== null}
-                          title="Ekspor laporan PDF baris ini"
-                          className="rounded-md border border-[#0072CE]/40 bg-[#E8F4FC] px-2.5 py-1 text-xs font-semibold text-[#0072CE] hover:bg-[#0072CE] hover:text-white disabled:opacity-40"
+                          title={`Ekspor PDF inspeksi #${r.id}`}
+                          aria-label={`Ekspor PDF inspeksi #${r.id}`}
+                          className="rounded-md p-1.5 text-[#172033] hover:bg-[#E8F4FC] hover:text-[#0072CE] disabled:opacity-40"
                         >
-                          {downloadingId === r.id ? 'Memuat…' : 'Ekspor PDF'}
+                          {downloadingId === r.id ? (
+                            <span aria-hidden="true" className="block h-4 w-4 animate-spin rounded-full border-2 border-[#0072CE]/30 border-t-[#0072CE]" />
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <path d="M7 10l5 5 5-5" />
+                              <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(r)}
+                          title={`Hapus inspeksi #${r.id}`}
+                          aria-label={`Hapus inspeksi #${r.id}`}
+                          className="rounded-md p-1.5 text-[#64748B] hover:bg-[#DC2626]/10 hover:text-[#DC2626]"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
                         </button>
                       </span>
                     </td>
@@ -263,24 +281,38 @@ export default function HistoryPage() {
               </tbody>
             </table>
           </div>
-          <div className="mt-3 flex items-center justify-between text-sm text-[#64748B]">
-            <span>
-              Halaman {safePage} dari {totalPages} ({filtered.length} inspeksi)
-            </span>
-            <div className="flex gap-2">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-[#64748B]">
+            <span className="tabular-nums">{filtered.length} inspeksi</span>
+            <div className="flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
                 disabled={safePage <= 1}
                 onClick={() => setPage(safePage - 1)}
-                className="rounded-md border border-[#E2E8F0] px-3 py-1 font-medium text-[#172033] disabled:opacity-40"
+                className="rounded-md border border-[#E2E8F0] px-3 py-1 font-medium text-[#172033] hover:bg-[#E8F4FC] disabled:opacity-40"
               >
                 Sebelumnya
               </button>
+              {pageNumbers.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPage(n)}
+                  aria-label={`Halaman ${n}`}
+                  aria-current={n === safePage ? 'page' : undefined}
+                  className={`min-w-8 rounded-md border px-2 py-1 font-medium tabular-nums ${
+                    n === safePage
+                      ? 'border-[#0072CE] bg-[#0072CE] text-white'
+                      : 'border-[#E2E8F0] text-[#172033] hover:bg-[#E8F4FC]'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
               <button
                 type="button"
                 disabled={safePage >= totalPages}
                 onClick={() => setPage(safePage + 1)}
-                className="rounded-md border border-[#E2E8F0] px-3 py-1 font-medium text-[#172033] disabled:opacity-40"
+                className="rounded-md border border-[#E2E8F0] px-3 py-1 font-medium text-[#172033] hover:bg-[#E8F4FC] disabled:opacity-40"
               >
                 Berikutnya
               </button>
@@ -289,13 +321,13 @@ export default function HistoryPage() {
         </section>
       )}
       <ConfirmDialog
-        open={confirmDelete}
-        title="Hapus inspeksi terpilih?"
-        message={`${selected.size} inspeksi akan dihapus permanen, termasuk foto dan semua indikasinya. Tindakan ini tidak bisa dibatalkan.`}
+        open={deleteTarget !== null}
+        title={`Hapus inspeksi #${deleteTarget?.id ?? ''}?`}
+        message={`Inspeksi #${deleteTarget?.id ?? ''} akan dihapus permanen, termasuk foto dan semua indikasinya. Tindakan ini tidak bisa dibatalkan.`}
         confirmLabel="Hapus"
         loading={deleting}
-        onConfirm={handleBulkDelete}
-        onCancel={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
       />
     </div>
   );

@@ -25,6 +25,7 @@ export default function Header() {
           </Link>
         </nav>
       </div>
+      <div aria-hidden="true" className="h-[3px] bg-[#FFD100]" />
     </header>
   );
 }
