@@ -9,6 +9,8 @@ import CalculationSummary from '../components/inspection/CalculationSummary';
 import EvaluationResultCard from '../components/inspection/EvaluationResultCard';
 import IndicationModal from '../components/inspection/IndicationModal';
 import IndicationTable from '../components/inspection/IndicationTable';
+import CriteriaComparison from '../components/inspection/CriteriaComparison';
+import IndicationTotals from '../components/inspection/IndicationTotals';
 import type { CanvasPercent } from '../components/inspection/MappingCanvas';
 
 /** Konva dimuat terpisah (code-split) agar bundle awal tetap kecil. */
@@ -96,10 +98,11 @@ export default function NewInspectionPage() {
       (!form.pakaiPManual && Number.isNaN(diameter)) ||
       (form.pakaiPManual && (panjangPManual === null || Number.isNaN(panjangPManual))) ||
       Number.isNaN(panjang) ||
+      !form.unitAsal.trim() ||
       form.standardId === '' ||
       (lebarZonaA !== null && Number.isNaN(lebarZonaA))
     ) {
-    setError('Semua field wajib diisi dengan benar (isi Diameter, atau Panjang (P) langsung).');
+      setError('Semua field wajib diisi dengan benar, termasuk Unit Asal (isi Diameter, atau Panjang (P) langsung).');
       return;
     }
     setBusy(true);
@@ -109,6 +112,7 @@ export default function NewInspectionPage() {
         diameter_mm: diameter,
         panjang_l_mm: panjang,
         zona: form.zona.trim(),
+        unit_asal: form.unitAsal.trim(),
         standard_id: form.standardId,
         lebar_zona_a_mm: lebarZonaA,
         panjang_p_mm: panjangPManual,
@@ -324,6 +328,14 @@ export default function NewInspectionPage() {
                 onChange={(e) => dispatch(setForm({ jenisBenda: e.target.value }))}
                 placeholder="mis. Bearing"
               />
+              <div className="mt-3">
+                <Input
+                  label="Unit Asal Barang"
+                  value={form.unitAsal}
+                  onChange={(e) => dispatch(setForm({ unitAsal: e.target.value }))}
+                  placeholder="mis. Unit 3 / PLTA Maninjau"
+                />
+              </div>
             </fieldset>
 
             <fieldset>
@@ -448,6 +460,7 @@ export default function NewInspectionPage() {
             <>
               <CalculationSummary result={result} standard={activeStandard} emphasize />
               <EvaluationResultCard result={result} size="lg" />
+              <CriteriaComparison result={result} />
               <div className="flex gap-2">
                 <Link
                   to="/inspection/history"
@@ -588,6 +601,7 @@ export default function NewInspectionPage() {
                   }}
                 />
               </div>
+              {result && <IndicationTotals result={result} indications={indications} />}
               <div className="mt-3">
                 <Button
                   onClick={handleCalculate}

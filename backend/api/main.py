@@ -106,6 +106,7 @@ class ComponentIn(BaseModel):
     standard_id: int
     lebar_zona_a_mm: Optional[float] = None
     panjang_p_mm: Optional[float] = None
+    unit_asal: Optional[str] = None
 
 
 class IndikasiIn(BaseModel):
@@ -180,6 +181,9 @@ def edit_standard(standard_id: int, data: StandardIn, _: dict = Depends(require_
 
 @app.post("/components")
 def create_component(data: ComponentIn, user: dict = Depends(get_current_user)):
+    unit_asal = (data.unit_asal or "").strip()
+    if not unit_asal:
+        raise HTTPException(status_code=422, detail="Unit asal barang wajib diisi.")
     component_id = tambah_component(
         jenis_benda=data.jenis_benda,
         diameter_mm=data.diameter_mm,
@@ -189,6 +193,7 @@ def create_component(data: ComponentIn, user: dict = Depends(get_current_user)):
         inspector=user["username"],
         lebar_zona_a_mm=data.lebar_zona_a_mm,
         panjang_p_mm=data.panjang_p_mm,
+        unit_asal=unit_asal,
     )
     return {"id": component_id, "inspector": user["username"], **data.dict()}
 
@@ -325,6 +330,15 @@ def calculate(component_id: int):
         "persen_unbond_zone_c": hasil.persen_unbond_zone_c,
         "status_zone_c": hasil.status_zone_c,
         "status": hasil.status,
+        "toleransi_persen": hasil.toleransi_persen,
+        "status_persen_zone_a": hasil.status_persen_zone_a,
+        "dimensi_terbesar_zone_a": hasil.dimensi_terbesar_zone_a,
+        "batas_dimensi_zone_a": hasil.batas_dimensi_zone_a,
+        "status_dimensi_zone_a": hasil.status_dimensi_zone_a,
+        "status_persen_zone_c": hasil.status_persen_zone_c,
+        "luas_terbesar_zone_c": hasil.luas_terbesar_zone_c,
+        "batas_luas_zone_c": hasil.batas_luas_zone_c,
+        "status_luas_zone_c": hasil.status_luas_zone_c,
     })
 
     return hasil

@@ -16,7 +16,7 @@ export default function CalculationSummary({
   emphasize?: boolean;
 }) {
   const rows: Array<[string, string, boolean]> = [
-    ['Keliling (P)', `${formatNumber(result.p_keliling)} mm`, false],
+    ['Panjang (P)', `${formatNumber(result.p_keliling)} mm`, false],
     ['Luas Babbit total', `${formatNumber(result.a_babbit)} mm²`, false],
     ['Luas Zona A', `${formatNumber(result.a_zone_a)} mm²`, false],
     ['Luas Zona C', `${formatNumber(result.a_zone_c)} mm²`, false],

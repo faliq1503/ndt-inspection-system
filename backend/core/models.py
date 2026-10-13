@@ -89,3 +89,14 @@ class EvaluationResult:
     status_zone_c: str = ""
 
     status: str = ""  # status akhir gabungan: "ACCEPT" atau "REJECT"
+
+    # Perbandingan dengan batas standar (disimpan saat dihitung)
+    toleransi_persen: float = 0.0
+    status_persen_zone_a: str = ""
+    dimensi_terbesar_zone_a: float = 0.0
+    batas_dimensi_zone_a: float = 0.0
+    status_dimensi_zone_a: str = ""
+    status_persen_zone_c: str = ""
+    luas_terbesar_zone_c: float = 0.0
+    batas_luas_zone_c: float = 0.0
+    status_luas_zone_c: str = ""

@@ -5,6 +5,8 @@ import ErrorState from '../components/common/ErrorState';
 import Loading from '../components/common/Loading';
 import StatusBadge, { Badge } from '../components/common/StatusBadge';
 import IndicationTable from '../components/inspection/IndicationTable';
+import CriteriaComparison from '../components/inspection/CriteriaComparison';
+import IndicationTotals from '../components/inspection/IndicationTotals';
 import { inspectionService } from '../services/inspectionService';
 import type { ComponentDetail, ResultRow, Standard } from '../types/index';
 import { formatNumber } from '../utils/format';
@@ -25,7 +27,10 @@ function validNumber(v: unknown): v is number {
 
 function splitDateTime(iso: string | null | undefined): { date: string; time: string } {
   if (!iso) return { date: '-', time: '' };
-  const d = new Date(iso);
+  // SQLite CURRENT_TIMESTAMP = UTC tanpa penanda zona ("2026-10-13 12:37:00").
+  // Tanpa 'Z', browser menganggapnya waktu lokal sehingga jamnya meleset 7 jam.
+  const hasZone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(iso);
+  const d = new Date(hasZone ? iso : iso.replace(' ', 'T') + 'Z');
   if (Number.isNaN(d.getTime())) return { date: iso, time: '' };
   return {
     date: d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
@@ -139,7 +144,7 @@ export default function DetailPage() {
     if (validNumber(persen) && toleransi !== null && persen > toleransi) {
       sebab.push(`Zona ${zona}: ${formatNumber(persen)}% melebihi ≤ ${formatNumber(toleransi)}%`);
     } else if (validNumber(persen) && toleransi !== null) {
-      sebab.push(`Zona ${zona}: REJECT di luar batas persentase (aturan individual)`);
+      sebab.push(`Zona ${zona}: REJECT karena batas indikasi individual, lihat tabel "Perbandingan dengan Standar"`);
     } else {
       sebab.push(`Zona ${zona}: REJECT`);
     }
@@ -288,11 +293,11 @@ export default function DetailPage() {
           <div>
             <dt className="text-xs text-[#64748B]">Diameter</dt>
             <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[#172033]">
-              {component ? `${formatNumber(component.diameter_mm)} mm` : '—'}
+              {component && component.diameter_mm > 0 ? `${formatNumber(component.diameter_mm)} mm` : '-'}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-[#64748B]">Panjang</dt>
+            <dt className="text-xs text-[#64748B]">Lebar (L)</dt>
             <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[#172033]">
               {component ? `${formatNumber(component.panjang_l_mm)} mm` : '—'}
             </dd>
@@ -300,8 +305,16 @@ export default function DetailPage() {
           <div>
             <dt className="text-xs text-[#64748B]">Lebar Zona A</dt>
             <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[#172033]">
-              {standard && validNumber(standard.lebar_zona_a_mm) ? `${formatNumber(standard.lebar_zona_a_mm)} mm` : '—'}
+              {validNumber(component?.lebar_zona_a_mm)
+                ? `${formatNumber(component!.lebar_zona_a_mm as number)} mm`
+                : standard && validNumber(standard.lebar_zona_a_mm)
+                  ? `${formatNumber(standard.lebar_zona_a_mm)} mm`
+                  : '—'}
             </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-[#64748B]">Unit Asal</dt>
+            <dd className="mt-0.5 text-sm font-semibold text-[#172033]">{component?.unit_asal || '-'}</dd>
           </div>
           <div>
             <dt className="text-xs text-[#64748B]">Standar</dt>
@@ -426,12 +439,14 @@ export default function DetailPage() {
             </p>
           </section>
 
+          <CriteriaComparison result={result} />
+
           <section className="rounded-lg border border-[#E2E8F0] bg-white p-5" aria-label="Perhitungan">
             <h2 className="text-[15px] font-semibold text-[#172033]">Perhitungan</h2>
             <h3 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-[#64748B]">Geometri</h3>
             <dl className="divide-y divide-[#E2E8F0] text-sm">
               <div className="flex items-center justify-between gap-3 py-1.5">
-                <dt className="text-[#64748B]">Keliling (P)</dt>
+                <dt className="text-[#64748B]">Panjang (P)</dt>
                 <dd className="text-right font-medium tabular-nums text-[#172033]">{formatNumber(result.p_keliling)} mm</dd>
               </div>
               <div className="flex items-center justify-between gap-3 py-1.5">
@@ -494,22 +509,7 @@ export default function DetailPage() {
             hideActions
           />
         </div>
-        {indications.length > 0 && (
-          <dl className="mt-3 flex flex-wrap gap-x-8 gap-y-1 border-t border-[#E2E8F0] pt-3 text-sm">
-            <div className="flex gap-2">
-              <dt className="text-[#64748B]">Jumlah indikasi</dt>
-              <dd className="font-semibold tabular-nums text-[#172033]">{indications.length}</dd>
-            </div>
-            <div className="flex gap-2">
-              <dt className="text-[#64748B]">Total unbound Zona A</dt>
-              <dd className="font-semibold tabular-nums text-[#172033]">{formatNumber(result.a_unbond_zone_a)} mm²</dd>
-            </div>
-            <div className="flex gap-2">
-              <dt className="text-[#64748B]">Total unbound Zona C</dt>
-              <dd className="font-semibold tabular-nums text-[#172033]">{formatNumber(result.a_unbond_zone_c)} mm²</dd>
-            </div>
-          </dl>
-        )}
+        <IndicationTotals result={result} indications={indications} />
       </section>
     </div>
   );
