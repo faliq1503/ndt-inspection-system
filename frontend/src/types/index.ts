@@ -47,6 +47,8 @@ export interface Indication {
   /** posisi dalam persen 0-100 relatif terhadap gambar tampil */
   posisi_x: number | null;
   posisi_y: number | null;
+  /** foto bukti pengukuran langsung (nama file di /images), null bila belum ada */
+  bukti_path: string | null;
   /** dihitung backend, null sebelum pernah di-calculate (lihat GET /components/:id) */
   a_bond_individual: number | null;
   persen_individual: number | null;

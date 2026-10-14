@@ -46,6 +46,8 @@ from db.database import (
     simpan_gambar_path,
     update_posisi_indikasi,
     update_ukuran_indikasi,
+    ambil_indikasi_by_id,
+    simpan_bukti_path,
 )
 from reports.pdf_report import generate_pdf_report
 from reports.excel_report import generate_excel_riwayat
@@ -274,6 +276,23 @@ def set_indication_position(indication_id: int, data: PosisiIn):
 def set_indication_size(indication_id: int, data: IndikasiUpdateIn):
     update_ukuran_indikasi(indication_id, data.zona, data.panjang_mm, data.lebar_mm)
     return {"id": indication_id, **data.dict()}
+
+
+@app.post("/indications/{indication_id}/upload-bukti")
+def upload_bukti(indication_id: int, file: UploadFile = File(...)):
+    ind = ambil_indikasi_by_id(indication_id)
+    if ind is None:
+        raise HTTPException(status_code=404, detail="Indikasi tidak ditemukan")
+
+    ext = os.path.splitext(file.filename)[1] or ".jpg"
+    filename = f"evidence_{indication_id}_{uuid.uuid4().hex[:8]}{ext}"
+    dest_path = os.path.join(IMAGES_DIR, filename)
+
+    with open(dest_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    simpan_bukti_path(indication_id, filename)
+    return {"bukti_path": filename, "url": f"/images/{filename}"}
 
 
 # ---------------------------------------------------------------------

@@ -8,7 +8,9 @@ import Loading from '../components/common/Loading';
 import CalculationSummary from '../components/inspection/CalculationSummary';
 import EvaluationResultCard from '../components/inspection/EvaluationResultCard';
 import IndicationModal from '../components/inspection/IndicationModal';
+import type { IndicationFormValue } from '../components/inspection/IndicationModal';
 import IndicationTable from '../components/inspection/IndicationTable';
+import Modal from '../components/common/Modal';
 import CriteriaComparison from '../components/inspection/CriteriaComparison';
 import IndicationTotals from '../components/inspection/IndicationTotals';
 import type { CanvasPercent } from '../components/inspection/MappingCanvas';
@@ -50,6 +52,7 @@ export default function NewInspectionPage() {
   const [addPos, setAddPos] = useState<CanvasPercent | null>(null);
   const [editing, setEditing] = useState<Indication | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
+  const [buktiView, setBuktiView] = useState<{ url: string; nomor: number } | null>(null);
   const [focusReq, setFocusReq] = useState<{ id: number; nonce: number } | null>(null);
   // Toast kecil untuk notifikasi sukses (otomatis hilang)
   const [toast, setToast] = useState<string | null>(null);
@@ -161,18 +164,21 @@ export default function NewInspectionPage() {
     setAddPos(posPct);
   }
 
-  async function handleAddSubmit(v: { zona: Indication['zona']; panjang_mm: number; lebar_mm: number }) {
+  async function handleAddSubmit(v: IndicationFormValue) {
     if (componentId === null || addPos === null) return;
     setError(null);
     setModalSaving(true);
     try {
-      await inspectionService.addIndication(componentId, {
+      const created = await inspectionService.addIndication(componentId, {
         zona: v.zona,
         panjang_mm: v.panjang_mm,
         lebar_mm: v.lebar_mm,
         posisi_x: addPos.x,
         posisi_y: addPos.y,
       });
+      if (v.buktiFile) {
+        await inspectionService.uploadBukti(created.id, v.buktiFile);
+      }
       await refreshComponent(componentId);
       setAddPos(null);
     } catch (err) {
@@ -183,12 +189,15 @@ export default function NewInspectionPage() {
   }
 
   /** Edit didukung backend via PUT /indications/{id}/size. */
-  async function handleEditSubmit(v: { zona: Indication['zona']; panjang_mm: number; lebar_mm: number }) {
+  async function handleEditSubmit(v: IndicationFormValue) {
     if (editing === null) return;
     setError(null);
     setModalSaving(true);
     try {
       await inspectionService.updateSize(editing.id, v.zona, v.panjang_mm, v.lebar_mm);
+      if (v.buktiFile) {
+        await inspectionService.uploadBukti(editing.id, v.buktiFile);
+      }
       if (componentId !== null) await refreshComponent(componentId);
       setEditing(null);
     } catch (err) {
@@ -580,11 +589,25 @@ export default function NewInspectionPage() {
               initialZona={editing.zona}
               initialPanjang={String(editing.panjang_mm)}
               initialLebar={String(editing.lebar_mm)}
+              initialBuktiUrl={editing.bukti_path ? inspectionService.imageUrl(editing.bukti_path) : null}
               saving={modalSaving}
               submitLabel="Simpan Perubahan"
               onClose={() => setEditing(null)}
               onSubmit={handleEditSubmit}
             />
+          )}
+
+          {buktiView && (
+            <Modal
+              title={`Foto Bukti — Indikasi #${buktiView.nomor}`}
+              onClose={() => setBuktiView(null)}
+            >
+              <img
+                src={buktiView.url}
+                alt={`Foto bukti indikasi #${buktiView.nomor}`}
+                className="max-h-[60vh] w-full rounded-lg border border-[#E2E8F0] object-contain"
+              />
+            </Modal>
           )}
 
           {componentId !== null && (
@@ -598,6 +621,12 @@ export default function NewInspectionPage() {
                   onEdit={(ind) => {
                     setAddPos(null);
                     setEditing(ind);
+                  }}
+                  onViewBukti={(ind) => {
+                    const url = ind.bukti_path ? inspectionService.imageUrl(ind.bukti_path) : null;
+                    if (!url) return;
+                    const nomor = indications.findIndex((x) => x.id === ind.id) + 1;
+                    setBuktiView({ url, nomor });
                   }}
                 />
               </div>

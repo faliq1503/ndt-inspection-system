@@ -68,6 +68,11 @@ export const inspectionService = {
     return apiPut<Indication>(`/indications/${indicationId}/size`, { zona, panjang_mm, lebar_mm });
   },
 
+  /** Upload foto bukti pengukuran langsung. Backend: POST /indications/{id}/upload-bukti. */
+  uploadBukti(indicationId: number, file: File): Promise<{ bukti_path: string; url: string }> {
+    return apiUpload<{ bukti_path: string; url: string }>(`/indications/${indicationId}/upload-bukti`, file);
+  },
+
   /**
    * Total seluruh indication dari semua inspection (jumlah baris,
    * bukan luas). Backend: GET /indications/count -> { total_indication }.

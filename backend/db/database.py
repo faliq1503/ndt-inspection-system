@@ -61,6 +61,7 @@ def init_db():
             lebar_mm REAL NOT NULL,
             posisi_x REAL,
             posisi_y REAL,
+            bukti_path TEXT,
             FOREIGN KEY (component_id) REFERENCES component (id)
         )
     """)
@@ -94,6 +95,7 @@ def init_db():
         ("component", "lebar_zona_a_mm", "REAL"),
         ("component", "panjang_p_mm", "REAL"),
         ("indication", "zona", "TEXT NOT NULL DEFAULT 'C'"),
+        ("indication", "bukti_path", "TEXT"),
         ("standard", "lebar_zona_a_mm", "REAL NOT NULL DEFAULT 25"),
         ("standard", "individu_zona_a_mm", "REAL NOT NULL DEFAULT 12.5"),
         ("standard", "individu_zona_c_persen", "REAL NOT NULL DEFAULT 3.0"),
@@ -299,6 +301,23 @@ def update_ukuran_indikasi(indication_id: int, zona: str, panjang_mm: float, leb
         "UPDATE indication SET zona = ?, panjang_mm = ?, lebar_mm = ? WHERE id = ?",
         (zona, panjang_mm, lebar_mm, indication_id),
     )
+    conn.commit()
+    conn.close()
+
+
+def ambil_indikasi_by_id(indication_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM indication WHERE id = ?", (indication_id,))
+    row = cur.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def simpan_bukti_path(indication_id: int, bukti_path: str):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE indication SET bukti_path = ? WHERE id = ?", (bukti_path, indication_id))
     conn.commit()
     conn.close()
 
