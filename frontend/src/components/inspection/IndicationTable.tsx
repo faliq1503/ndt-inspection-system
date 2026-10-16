@@ -38,7 +38,7 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit, h
             <th className="py-2 pr-3 text-right font-medium">Luas (mm²)</th>
             <th className="py-2 pr-3 text-right font-medium">Luas Bond</th>
             <th className="py-2 pr-3 text-right font-medium">%</th>
-            {!hideActions && <th className="py-2 font-medium">Aksi</th>}
+            {(!hideActions || onViewBukti) && <th className="py-2 font-medium">Aksi</th>}
           </tr>
         </thead>
         <tbody>
@@ -67,7 +67,7 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit, h
               <td className="py-2 pr-3 text-right tabular-nums">
                 {ind.persen_individual !== null ? `${formatNumber(ind.persen_individual)} %` : '-'}
               </td>
-              {!hideActions && (
+              {(!hideActions || onViewBukti) && (
                 <td className="py-2">
                   <span className="flex items-center gap-1">
                     {onViewBukti && ind.bukti_path && (
@@ -87,20 +87,22 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit, h
                         </svg>
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit(ind);
-                      }}
-                      title={`Ubah indikasi #${i + 1}`}
-                      className="inline-flex items-center gap-1 font-medium text-[#0072CE] hover:underline"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                      </svg>
-                      Ubah
-                    </button>
+                    {!hideActions && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(ind);
+                        }}
+                        title={`Ubah indikasi #${i + 1}`}
+                        aria-label={`Ubah indikasi #${i + 1}`}
+                        className="rounded-md p-1.5 text-[#0072CE] hover:bg-[#E8F4FC]"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                        </svg>
+                      </button>
+                    )}
                   </span>
                 </td>
               )}

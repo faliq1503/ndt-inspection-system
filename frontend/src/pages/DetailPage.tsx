@@ -5,6 +5,7 @@ import ErrorState from '../components/common/ErrorState';
 import Loading from '../components/common/Loading';
 import StatusBadge, { Badge } from '../components/common/StatusBadge';
 import IndicationTable from '../components/inspection/IndicationTable';
+import Modal from '../components/common/Modal';
 import CriteriaComparison from '../components/inspection/CriteriaComparison';
 import IndicationTotals from '../components/inspection/IndicationTotals';
 import { inspectionService } from '../services/inspectionService';
@@ -55,6 +56,7 @@ export default function DetailPage() {
   const [focusReq, setFocusReq] = useState<{ id: number; nonce: number } | null>(null);
   const [showMarkers, setShowMarkers] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [buktiView, setBuktiView] = useState<{ url: string; nomor: number } | null>(null);
   const drawingRef = useRef<HTMLElement>(null);
 
   function load() {
@@ -507,10 +509,29 @@ export default function DetailPage() {
             onSelect={handleSelectRow}
             onEdit={() => undefined}
             hideActions
+            onViewBukti={(ind) => {
+              const url = ind.bukti_path ? inspectionService.imageUrl(ind.bukti_path) : null;
+              if (!url) return;
+              const nomor = indications.findIndex((x) => x.id === ind.id) + 1;
+              setBuktiView({ url, nomor });
+            }}
           />
         </div>
         <IndicationTotals result={result} indications={indications} />
       </section>
+
+      {buktiView && (
+        <Modal
+          title={`Foto Bukti — Indikasi #${buktiView.nomor}`}
+          onClose={() => setBuktiView(null)}
+        >
+          <img
+            src={buktiView.url}
+            alt={`Foto bukti indikasi #${buktiView.nomor}`}
+            className="max-h-[60vh] w-full rounded-lg border border-[#E2E8F0] object-contain"
+          />
+        </Modal>
+      )}
     </div>
   );
 }
