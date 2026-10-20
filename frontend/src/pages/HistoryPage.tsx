@@ -5,6 +5,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import EmptyState from '../components/common/EmptyState';
 import ErrorState from '../components/common/ErrorState';
 import Input from '../components/common/Input';
+import { useToast } from '../components/common/toastContext';
 import Loading from '../components/common/Loading';
 import PercentValue from '../components/common/PercentValue';
 import StatusBadge from '../components/common/StatusBadge';
@@ -171,6 +172,7 @@ export default function HistoryPage() {
   const [dlError, setDlError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ResultRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const toast = useToast();
 
   function load() {
     setLoading(true);
@@ -254,6 +256,7 @@ export default function HistoryPage() {
     setDlError(null);
     try {
       await inspectionService.bulkDeleteResults([deleteTarget.id]);
+      toast.success(`Inspeksi #${deleteTarget.id} berhasil dihapus.`);
       load();
     } catch (err) {
       setDlError(err instanceof Error ? err.message : 'Gagal menghapus inspeksi.');

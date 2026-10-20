@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import Button from '../components/common/Button';
 import ErrorState from '../components/common/ErrorState';
 import Input from '../components/common/Input';
+import { useToast } from '../components/common/toastContext';
 import Loading from '../components/common/Loading';
 import CalculationSummary from '../components/inspection/CalculationSummary';
 import EvaluationResultCard from '../components/inspection/EvaluationResultCard';
@@ -46,7 +47,7 @@ export default function NewInspectionPage() {
   const [component, setComponent] = useState<ComponentDetail | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const toast = useToast();
 
   // Modal Add/Edit indication + sinyal fokus marker dari tabel
   const [addPos, setAddPos] = useState<CanvasPercent | null>(null);
@@ -54,8 +55,6 @@ export default function NewInspectionPage() {
   const [modalSaving, setModalSaving] = useState(false);
   const [buktiView, setBuktiView] = useState<{ url: string; nomor: number } | null>(null);
   const [focusReq, setFocusReq] = useState<{ id: number; nonce: number } | null>(null);
-  // Toast kecil untuk notifikasi sukses (otomatis hilang)
-  const [toast, setToast] = useState<string | null>(null);
   // Langkah yang sedang ditampilkan: 1 Data → 2 Gambar & Pemetaan → 3 Hasil
   const [step, setStep] = useState<1 | 2 | 3>(() => (result !== null ? 3 : componentId !== null ? 2 : 1));
 
@@ -86,12 +85,6 @@ export default function NewInspectionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [componentId]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3500);
-    return () => clearTimeout(t);
-  }, [toast]);
-
   async function refreshComponent(id: number) {
     const detail = await inspectionService.getComponent(id);
     setComponent(detail);
@@ -101,7 +94,6 @@ export default function NewInspectionPage() {
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    setNotice(null);
     const panjangPManual = form.pakaiPManual ? parseFloat(form.panjangPManual) : null;
     const diameter = form.pakaiPManual ? 0 : parseFloat(form.diameterMm);
     const panjang = parseFloat(form.panjangLMm);
@@ -134,7 +126,7 @@ export default function NewInspectionPage() {
       dispatch(setResult(null));
       dispatch(clearIndications());
       await refreshComponent(created.id);
-      setNotice(`Komponen #${created.id} dibuat. Lanjut unggah gambar dan petakan indikasi.`);
+      toast.success(`Komponen #${created.id} berhasil dibuat. Lanjut unggah gambar dan petakan indikasi.`);
       setStep(2);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal membuat komponen.');
@@ -159,7 +151,7 @@ export default function NewInspectionPage() {
     try {
       await inspectionService.uploadImage(componentId, file);
       await refreshComponent(componentId);
-      setToast('Gambar berhasil diunggah.');
+      toast.success('Gambar berhasil diunggah.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal mengunggah gambar.');
     } finally {
@@ -192,6 +184,7 @@ export default function NewInspectionPage() {
       }
       await refreshComponent(componentId);
       setAddPos(null);
+      toast.success('Indikasi berhasil ditambahkan.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menambah indikasi.');
     } finally {
@@ -211,6 +204,7 @@ export default function NewInspectionPage() {
       }
       if (componentId !== null) await refreshComponent(componentId);
       setEditing(null);
+      toast.success('Perubahan indikasi berhasil disimpan.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menyimpan perubahan.');
     } finally {
@@ -221,13 +215,12 @@ export default function NewInspectionPage() {
   async function handleCalculate() {
     if (componentId === null) return;
     setError(null);
-    setNotice(null);
     setBusy(true);
     try {
       const hasil = await inspectionService.calculate(componentId);
       dispatch(setResult(hasil));
       await refreshComponent(componentId);
-      setNotice('Inspeksi berhasil disimpan. Hasil dihitung oleh backend.');
+      toast.success('Inspeksi berhasil disimpan dan dievaluasi.');
       setStep(3);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menghitung.');
@@ -244,7 +237,6 @@ export default function NewInspectionPage() {
     setEditing(null);
     setFocusReq(null);
     setError(null);
-    setNotice(null);
     setStep(1);
   }
 
@@ -334,11 +326,6 @@ export default function NewInspectionPage() {
       {error && (
         <p role="alert" className="rounded-md bg-ndt-danger/10 px-3 py-2 text-sm text-ndt-danger">
           {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="rounded-md bg-ndt-success/10 px-3 py-2 text-sm text-ndt-success">
-          {notice}
         </p>
       )}
 
@@ -679,18 +666,6 @@ export default function NewInspectionPage() {
             className="max-h-[60vh] w-full rounded-lg border border-ndt-border object-contain"
           />
         </Modal>
-      )}
-
-      {toast && (
-        <div
-          role="status"
-          className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-lg border border-ndt-success/30 bg-white px-4 py-2.5 text-sm font-medium text-ndt-success shadow-[0_8px_24px_rgba(23,32,51,0.12)]"
-        >
-          <span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full bg-ndt-success text-xs font-bold text-white">
-            ✓
-          </span>
-          {toast}
-        </div>
       )}
     </div>
   );

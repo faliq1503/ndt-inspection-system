@@ -63,6 +63,24 @@ body {
   }
 }
 
+/* Animasi masuk toast notifikasi */
+@keyframes ndt-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-toast-in {
+    animation: ndt-toast-in 0.2s ease-out both;
+  }
+}
+
 /* Cetak halaman detail: hanya konten, tanpa navigasi/aksi */
 @media print {
   header,

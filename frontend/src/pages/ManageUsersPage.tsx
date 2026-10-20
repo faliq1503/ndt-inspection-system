@@ -5,6 +5,7 @@ import IconButton from '../components/common/IconButton';
 import { Badge } from '../components/common/StatusBadge';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import ErrorState from '../components/common/ErrorState';
+import { useToast } from '../components/common/toastContext';
 import Input from '../components/common/Input';
 import Loading from '../components/common/Loading';
 import { userService } from '../services/userService';
@@ -85,7 +86,7 @@ export default function ManageUsersPage() {
   const [role, setRole] = useState<UserRole>('staff');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const toast = useToast();
 
   const [resetTarget, setResetTarget] = useState<ManagedUser | null>(null);
   const [resetPassword, setResetPassword] = useState('');
@@ -116,7 +117,6 @@ export default function ManageUsersPage() {
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    setNotice(null);
     const name = username.trim();
     if (name.length < 3) {
       setError('Nama pengguna minimal 3 karakter.');
@@ -133,7 +133,7 @@ export default function ManageUsersPage() {
       setUsername('');
       setPassword('');
       setRole('staff');
-      setNotice(`Akun "${name}" berhasil dibuat.`);
+      toast.success(`Akun "${name}" berhasil dibuat.`);
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal membuat akun.');
@@ -146,11 +146,10 @@ export default function ManageUsersPage() {
     if (!toggleTarget) return;
     const u = toggleTarget;
     setError(null);
-    setNotice(null);
     setToggling(true);
     try {
       await userService.setActive(u.id, !u.aktif);
-      setNotice(`Akun "${u.username}" ${u.aktif ? 'dinonaktifkan' : 'diaktifkan'}.`);
+      toast.success(`Akun "${u.username}" ${u.aktif ? 'dinonaktifkan' : 'diaktifkan'}.`);
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal mengubah status akun.');
@@ -164,7 +163,6 @@ export default function ManageUsersPage() {
     e.preventDefault();
     if (!resetTarget) return;
     setError(null);
-    setNotice(null);
     const pwError = validatePassword(resetPassword);
     if (pwError) {
       setError(pwError);
@@ -178,11 +176,10 @@ export default function ManageUsersPage() {
     if (!pendingReset) return;
     const u = pendingReset;
     setError(null);
-    setNotice(null);
     setBusy(true);
     try {
       await userService.resetPassword(u.id, resetPassword);
-      setNotice(`Kata sandi "${u.username}" berhasil direset.`);
+      toast.success(`Kata sandi "${u.username}" berhasil direset.`);
       setResetTarget(null);
       setResetPassword('');
     } catch (err) {
@@ -206,11 +203,6 @@ export default function ManageUsersPage() {
       {error && (
         <p role="alert" className="rounded-md bg-ndt-danger/10 px-3 py-2 text-sm text-ndt-danger">
           {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="rounded-md bg-ndt-success/10 px-3 py-2 text-sm text-ndt-success">
-          {notice}
         </p>
       )}
 

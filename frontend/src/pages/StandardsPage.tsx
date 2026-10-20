@@ -4,6 +4,7 @@ import Button from '../components/common/Button';
 import IconButton from '../components/common/IconButton';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import ErrorState from '../components/common/ErrorState';
+import { useToast } from '../components/common/toastContext';
 import Input from '../components/common/Input';
 import Loading from '../components/common/Loading';
 import { standardService } from '../services/standardService';
@@ -84,7 +85,7 @@ export default function StandardsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const toast = useToast();
   const [deleteTarget, setDeleteTarget] = useState<Standard | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -114,13 +115,11 @@ export default function StandardsPage() {
     setEditingId(s.id);
     setForm(toForm(s));
     setError(null);
-    setNotice(null);
   }
 
   async function confirmDelete() {
     if (!deleteTarget) return;
     setError(null);
-    setNotice(null);
     setDeleting(true);
     try {
       await standardService.remove(deleteTarget.id);
@@ -128,7 +127,7 @@ export default function StandardsPage() {
         setEditingId(null);
         setForm(EMPTY_FORM);
       }
-      setNotice(`Standar "${deleteTarget.nama_standard}" berhasil dihapus.`);
+      toast.success(`Standar "${deleteTarget.nama_standard}" berhasil dihapus.`);
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menghapus standar.');
@@ -147,7 +146,6 @@ export default function StandardsPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    setNotice(null);
     const payload = toPayload(form);
     if (typeof payload === 'string') {
       setError(payload);
@@ -157,10 +155,10 @@ export default function StandardsPage() {
     try {
       if (editingId === null) {
         await standardService.create(payload);
-        setNotice(`Standar "${payload.nama_standard}" berhasil dibuat.`);
+        toast.success(`Standar "${payload.nama_standard}" berhasil dibuat.`);
       } else {
         await standardService.update(editingId, payload);
-        setNotice(`Standar "${payload.nama_standard}" berhasil diperbarui.`);
+        toast.success(`Standar "${payload.nama_standard}" berhasil diperbarui.`);
       }
       setEditingId(null);
       setForm(EMPTY_FORM);
@@ -187,11 +185,6 @@ export default function StandardsPage() {
       {error && (
         <p role="alert" className="rounded-md bg-ndt-danger/10 px-3 py-2 text-sm text-ndt-danger">
           {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="rounded-md bg-ndt-success/10 px-3 py-2 text-sm text-ndt-success">
-          {notice}
         </p>
       )}
 
