@@ -8,6 +8,7 @@ Format mengikuti ketentuan PLN:
 - Header : kop PLN Pusharlis + judul laporan + info laporan (termasuk tanggal cetak)
 - Tabel  : riwayat hasil inspeksi
 - Footer : kolom tanda tangan (CHECKED BY)
+Konten kop & tanda tangan ada di reports/kop_pln.py.
 """
 
 import os
@@ -17,36 +18,14 @@ from openpyxl import Workbook
 from openpyxl.drawing.image import Image as XLImage
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
+from reports.kop_pln import (
+    KOP_BARIS, LOGO_PATH, NAMA_SISTEM, PELAKSANA, STANDAR_ACUAN, TANDA_TANGAN,
+    format_tanggal_indo,
+)
+
 REPORTS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "reports")
-LOGO_PATH = os.path.join(os.path.dirname(__file__), "assets", "logo_pln.png")
-
-# ---------------------------------------------------------------------
-# Konten header & footer (ubah di sini kalau ada perubahan dari PLN)
-# ---------------------------------------------------------------------
-
-KOP_BARIS = [
-    ("PT PLN (PERSERO) PUSHARLIS", 12, True),
-    ("UNIT PELAKSANA PRODUKSI DAN WORKSHOP III", 11, True),
-    ("Jl. Banten No. 10 Bandung 40272", 9, False),
-    ("Telp (022) 7236791, 7236792, 7236793 Faks (022) 7236794 | e-mail: pusharlis@pln.co.id", 9, False),
-]
 
 JUDUL_LAPORAN = "LAPORAN RIWAYAT INSPEKSI NDT"
-NAMA_SISTEM = "NDT Inspection System"
-STANDAR_ACUAN = "DOD-STD-2183 (SH)"
-PELAKSANA = "Workshop PLN Pusharlis"
-
-# (judul, jabatan, nama) untuk tiap kolom tanda tangan di footer
-TANDA_TANGAN = [
-    ("CHECKED BY", "TL QUALITY CONTROL", "BAGUS SANJAYA PUTRA"),
-    ("CHECKED BY", "TL QUALITY CONTROL", "BAGUS SANJAYA PUTRA"),
-    ("CHECKED BY", "TL QUALITY CONTROL", "BAGUS SANJAYA PUTRA"),
-]
-
-NAMA_BULAN = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-]
 
 HEADERS = [
     "ID", "Jenis Benda", "Diameter (mm)", "Zona",
@@ -68,10 +47,6 @@ THIN = Side(style="thin")
 FILL_HEADER = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
 FILL_ACCEPT = PatternFill(start_color="16A34A", end_color="16A34A", fill_type="solid")
 FILL_REJECT = PatternFill(start_color="DC2626", end_color="DC2626", fill_type="solid")
-
-
-def format_tanggal_indo(waktu: datetime) -> str:
-    return f"{waktu.day} {NAMA_BULAN[waktu.month - 1]} {waktu.year}"
 
 
 def _kotak(ws, baris_awal: int, kolom_awal: int, baris_akhir: int, kolom_akhir: int):

@@ -432,9 +432,11 @@ def ambil_hasil_by_id(result_id: int):
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.id as comp_id
+        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.id as comp_id,
+               c.unit_asal, c.tanggal_input, s.nama_standard
         FROM evaluation_result er
         JOIN component c ON er.component_id = c.id
+        LEFT JOIN standard s ON c.standard_id = s.id
         WHERE er.id = ?
     """, (result_id,))
     row = cur.fetchone()

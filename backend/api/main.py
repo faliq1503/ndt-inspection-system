@@ -373,7 +373,7 @@ def get_results():
 
 
 @app.get("/results/{result_id}/report/pdf")
-def export_pdf(result_id: int):
+def export_pdf(result_id: int, user: dict = Depends(get_current_user)):
     hasil = ambil_hasil_by_id(result_id)
     if hasil is None:
         raise HTTPException(status_code=404, detail="Hasil tidak ditemukan")
@@ -381,7 +381,8 @@ def export_pdf(result_id: int):
     indikasi_list = ambil_indikasi_by_component(hasil["comp_id"])
     comp = ambil_component_by_id(hasil["comp_id"])
     gambar = comp["gambar_path"] if comp else None
-    path = generate_pdf_report(result_id, hasil, indikasi_list, gambar_filename=gambar)
+    path = generate_pdf_report(result_id, hasil, indikasi_list, gambar_filename=gambar,
+                               dicetak_oleh=user["username"])
 
     return FileResponse(path, media_type="application/pdf", filename=f"laporan_ndt_{result_id}.pdf")
 
