@@ -418,9 +418,9 @@ def bulk_delete_results(data: BulkDeleteIn, _: dict = Depends(get_current_user))
     }
 
 @app.get("/results/export/excel")
-def export_excel():
+def export_excel(user: dict = Depends(get_current_user)):
     data = ambil_semua_hasil()
-    path = generate_excel_riwayat(data)
+    path = generate_excel_riwayat(data, dicetak_oleh=user["username"])
     return FileResponse(
         path,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
