@@ -9,11 +9,11 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const STYLES: Record<Variant, string> = {
-  primary: 'bg-[#0072CE] text-white hover:bg-[#005B9A] disabled:bg-[#0072CE]/50',
-  secondary: 'border border-[#E2E8F0] bg-white text-[#172033] hover:bg-[#E8F4FC] disabled:opacity-50',
-  danger: 'bg-[#DC2626] text-white hover:bg-[#DC2626]/90',
+  primary: 'bg-ndt-primary text-white hover:bg-ndt-primary-dark disabled:bg-ndt-primary/50',
+  secondary: 'border border-ndt-border bg-white text-ndt-text hover:bg-ndt-primary-light disabled:opacity-50',
+  danger: 'bg-ndt-danger text-white hover:bg-ndt-danger/90',
   destructive:
-    'border border-[#DC2626]/50 bg-white text-[#DC2626] hover:bg-[#DC2626]/10 disabled:opacity-50',
+    'border border-ndt-danger/50 bg-white text-ndt-danger hover:bg-ndt-danger/10 disabled:opacity-50',
 };
 
 export default function Button({ variant = 'primary', loading = false, loadingText = 'Memuat...', children, ...rest }: Props) {

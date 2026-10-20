@@ -38,3 +38,8 @@ NAMA_BULAN = [
 
 def format_tanggal_indo(waktu: datetime) -> str:
     return f"{waktu.day} {NAMA_BULAN[waktu.month - 1]} {waktu.year}"
+
+
+def label_status(status):
+    """Label status sama dengan website: ACCEPT ditampilkan 'ACC', REJECT tetap."""
+    return "ACC" if status == "ACCEPT" else status

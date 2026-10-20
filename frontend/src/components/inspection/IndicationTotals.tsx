@@ -31,21 +31,21 @@ export default function IndicationTotals({
   ];
 
   return (
-    <div className="mt-3 overflow-x-auto border-t border-[#E2E8F0] pt-3">
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#64748B]">Total Indikasi per Zona</p>
+    <div className="mt-3 overflow-x-auto border-t border-ndt-border pt-3">
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ndt-muted">Total Indikasi per Zona</p>
       <table className="w-full whitespace-nowrap text-left text-[13px]">
         <thead>
-          <tr className="border-b border-[#E2E8F0] text-[#64748B]">
+          <tr className="border-b border-ndt-border text-ndt-muted">
             <th className="py-1.5 pr-4 font-medium">Zona</th>
             <th className="py-1.5 pr-4 text-right font-medium">Jumlah</th>
-            <th className="py-1.5 pr-4 text-right font-medium">Total Unbound (mm²)</th>
+            <th className="py-1.5 pr-4 text-right font-medium">Total Unbond (mm²)</th>
             <th className="py-1.5 pr-4 text-right font-medium">Luas Bond (mm²)</th>
             <th className="py-1.5 text-right font-medium">%</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.zona} className="border-b border-[#E2E8F0] last:border-0">
+            <tr key={r.zona} className="border-b border-ndt-border last:border-0">
               <td className="py-1.5 pr-4 font-semibold">Zona {r.zona}</td>
               <td className="py-1.5 pr-4 text-right tabular-nums">{r.jumlah}</td>
               <td className="py-1.5 pr-4 text-right tabular-nums">{formatNumber(r.unbond)}</td>

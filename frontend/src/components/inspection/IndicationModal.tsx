@@ -116,7 +116,7 @@ export default function IndicationModal({
       }
     >
       <div className="mb-4">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8F4FC] px-3 py-1 text-xs font-semibold text-[#0072CE]">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-ndt-primary-light px-3 py-1 text-xs font-semibold text-ndt-primary">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
             <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
             <circle cx="12" cy="10" r="3" />
@@ -127,7 +127,7 @@ export default function IndicationModal({
 
       <div className="space-y-4">
         <div>
-          <p className="mb-1.5 block text-sm font-medium text-[#172033]">Zona Indikasi</p>
+          <p className="mb-1.5 block text-sm font-medium text-ndt-text">Zona Indikasi</p>
           <div className="grid grid-cols-2 gap-2" role="group" aria-label="Zona indikasi">
             {(['C', 'A'] as Zone[]).map((z) => (
               <button
@@ -137,8 +137,8 @@ export default function IndicationModal({
                 aria-pressed={zona === z}
                 className={`rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${
                   zona === z
-                    ? 'border-[#0072CE] bg-[#0072CE] text-white'
-                    : 'border-[#E2E8F0] bg-white text-[#64748B] hover:border-[#0072CE]/50 hover:text-[#172033]'
+                    ? 'border-ndt-primary bg-ndt-primary text-white'
+                    : 'border-ndt-border bg-white text-ndt-muted hover:border-ndt-primary/50 hover:text-ndt-text'
                 }`}
               >
                 Zona {z}
@@ -165,23 +165,23 @@ export default function IndicationModal({
         </div>
 
         <div>
-          <p className="mb-1.5 block text-sm font-medium text-[#172033]">Foto Bukti Pengukuran</p>
+          <p className="mb-1.5 block text-sm font-medium text-ndt-text">Foto Bukti Pengukuran</p>
           {previewUrl ? (
-            <div className="flex items-start gap-3 rounded-lg border border-[#E2E8F0] bg-[#F5F7FA] p-3">
+            <div className="flex items-start gap-3 rounded-lg border border-ndt-border bg-ndt-bg p-3">
               <img
                 src={previewUrl}
                 alt="Pratinjau foto bukti pengukuran"
-                className="h-20 w-20 shrink-0 rounded-md border border-[#E2E8F0] object-cover"
+                className="h-20 w-20 shrink-0 rounded-md border border-ndt-border object-cover"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium text-[#172033]">
+                <p className="truncate text-[13px] font-medium text-ndt-text">
                   {buktiFile ? buktiFile.name : 'Foto tersimpan'}
                 </p>
-                <p className="text-xs text-[#64748B]">
+                <p className="text-xs text-ndt-muted">
                   {buktiFile ? 'Foto baru — tersimpan saat indikasi disimpan.' : 'Ganti untuk mengunggah foto baru.'}
                 </p>
                 <div className="mt-1.5 flex gap-2">
-                  <label className="cursor-pointer text-xs font-semibold text-[#0072CE] hover:underline">
+                  <label className="cursor-pointer text-xs font-semibold text-ndt-primary hover:underline">
                     Ganti
                     <input type="file" accept="image/png,image/jpeg" onChange={handlePickFile} className="hidden" />
                   </label>
@@ -189,7 +189,7 @@ export default function IndicationModal({
                     <button
                       type="button"
                       onClick={handleRemoveFile}
-                      className="text-xs font-semibold text-[#DC2626] hover:underline"
+                      className="text-xs font-semibold text-ndt-danger hover:underline"
                     >
                       Hapus
                     </button>
@@ -198,13 +198,13 @@ export default function IndicationModal({
               </div>
             </div>
           ) : (
-            <label className="flex cursor-pointer flex-col items-center rounded-lg border border-dashed border-[#E2E8F0] bg-[#F5F7FA] px-4 py-6 text-center transition-colors hover:border-[#0072CE]/50 hover:bg-[#E8F4FC]/50">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0072CE" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <label className="flex cursor-pointer flex-col items-center rounded-lg border border-dashed border-ndt-border bg-ndt-bg px-4 py-6 text-center transition-colors hover:border-ndt-primary/50 hover:bg-ndt-primary-light/50">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-ndt-primary" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                 <circle cx="12" cy="13" r="4" />
               </svg>
-              <span className="mt-2 text-sm font-medium text-[#172033]">Pilih foto bukti</span>
-              <span className="mt-0.5 text-xs text-[#64748B]">PNG/JPG · maks {MAX_BUKTI_MB} MB · opsional</span>
+              <span className="mt-2 text-sm font-medium text-ndt-text">Pilih foto bukti</span>
+              <span className="mt-0.5 text-xs text-ndt-muted">PNG/JPG · maks {MAX_BUKTI_MB} MB · opsional</span>
               <input type="file" accept="image/png,image/jpeg" onChange={handlePickFile} className="hidden" />
             </label>
           )}
@@ -212,7 +212,7 @@ export default function IndicationModal({
       </div>
 
       {error && (
-        <p role="alert" className="mt-3 rounded-md bg-[#DC2626]/10 px-3 py-2 text-sm text-[#DC2626]">
+        <p role="alert" className="mt-3 rounded-md bg-ndt-danger/10 px-3 py-2 text-sm text-ndt-danger">
           {error}
         </p>
       )}

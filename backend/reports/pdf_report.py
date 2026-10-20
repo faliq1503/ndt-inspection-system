@@ -28,6 +28,7 @@ from reportlab.platypus import (
 
 from reports.kop_pln import (
     KOP_BARIS, LOGO_PATH, NAMA_SISTEM, STANDAR_ACUAN, TANDA_TANGAN, format_tanggal_indo,
+    label_status,
 )
 
 REPORTS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "reports")
@@ -67,7 +68,7 @@ def _dengan_satuan(nilai, satuan: str) -> str:
 
 
 def _warna_status(status):
-    if status == "ACCEPT":
+    if status in ("ACCEPT", "ACC"):
         return WARNA_ACCEPT
     if status == "REJECT":
         return WARNA_REJECT
@@ -179,7 +180,7 @@ def _blok_judul_dan_info(result_id, hasil, dicetak_oleh, waktu_cetak, styles):
         ("Zona Komponen", hasil.get("zona") or "-"),
     ]
     info_kanan = [
-        ("Inspector", hasil.get("inspector") or "-"),
+        ("Inspektur", hasil.get("inspector") or "-"),
         ("Unit Asal", hasil.get("unit_asal") or "-"),
         ("Standar Acuan", hasil.get("nama_standard") or STANDAR_ACUAN),
         ("Tanggal Cetak", format_tanggal_indo(waktu_cetak)),
@@ -208,7 +209,7 @@ def _blok_ringkasan(hasil, styles):
     """Tiga kotak status: Zona A, Zona C, Status Akhir."""
     def kotak(label, status, besar=False):
         gaya = styles["status_besar"] if besar else styles["status"]
-        return [Paragraph(label, styles["status_label"]), Paragraph(status or "-", gaya)]
+        return [Paragraph(label, styles["status_label"]), Paragraph(label_status(status) or "-", gaya)]
 
     sel = [
         kotak("STATUS ZONA A", hasil.get("status_zone_a")),
@@ -232,7 +233,7 @@ def _blok_ringkasan(hasil, styles):
 
     tabel.setStyle(TableStyle(gaya))
     keterangan = (
-        "Seluruh kriteria terpenuhi, komponen diterima (ACCEPT)."
+        "Seluruh kriteria terpenuhi, komponen diterima (ACC)."
         if hasil.get("status") == "ACCEPT"
         else "Melebihi batas toleransi, komponen ditolak (REJECT)."
     )
@@ -301,14 +302,16 @@ def _blok_perhitungan(hasil, styles):
         ["Persentase Unbond", _dengan_satuan(hasil.get("persen_unbond_zone_a"), "%"),
          _dengan_satuan(hasil.get("persen_unbond_zone_c"), "%")],
         ["Batas Toleransi Persentase", batas_persen, batas_persen],
-        ["Status Persentase", hasil.get("status_persen_zone_a") or "-", hasil.get("status_persen_zone_c") or "-"],
+        ["Status Persentase", label_status(hasil.get("status_persen_zone_a")) or "-",
+         label_status(hasil.get("status_persen_zone_c")) or "-"],
         ["Indikasi Terbesar", _dengan_satuan(dimensi_a, "mm"), _dengan_satuan(luas_c, "mm²")],
         ["Batas Indikasi Individu",
          "-" if batas_dim_a is None else f"maks. {_angka(batas_dim_a)} mm",
          "-" if batas_luas_c is None else f"maks. {_angka(batas_luas_c)} mm²"],
-        ["Status Indikasi Individu", hasil.get("status_dimensi_zone_a") or "-",
-         hasil.get("status_luas_zone_c") or "-"],
-        ["Status Zona", hasil.get("status_zone_a") or "-", hasil.get("status_zone_c") or "-"],
+        ["Status Indikasi Individu", label_status(hasil.get("status_dimensi_zone_a")) or "-",
+         label_status(hasil.get("status_luas_zone_c")) or "-"],
+        ["Status Zona", label_status(hasil.get("status_zone_a")) or "-",
+         label_status(hasil.get("status_zone_c")) or "-"],
     ]
     baris_status = []
     for r in (6, 9, 10):

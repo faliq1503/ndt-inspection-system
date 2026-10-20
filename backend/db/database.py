@@ -359,7 +359,7 @@ def ambil_semua_hasil():
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.unit_asal
+        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.unit_asal, c.tanggal_input
         FROM evaluation_result er
         JOIN component c ON er.component_id = c.id
         ORDER BY er.id DESC

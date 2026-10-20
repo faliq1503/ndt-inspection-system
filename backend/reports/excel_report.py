@@ -20,7 +20,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 from reports.kop_pln import (
     KOP_BARIS, LOGO_PATH, NAMA_SISTEM, PELAKSANA, STANDAR_ACUAN, TANDA_TANGAN,
-    format_tanggal_indo,
+    format_tanggal_indo, label_status,
 )
 
 REPORTS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "reports")
@@ -32,7 +32,7 @@ HEADERS = [
     "Luas Babbit (mm2)", "Luas Zone A (mm2)", "Luas Zone C (mm2)",
     "Unbond Zone A (mm2)", "% Unbond Zone A", "Status Zone A",
     "Unbond Zone C (mm2)", "% Unbond Zone C", "Status Zone C",
-    "Status Akhir", "Inspector", "Unit Asal",
+    "Status Akhir", "Inspektur", "Unit Asal",
 ]
 
 # Lebar kolom A..P sesuai format PLN
@@ -103,7 +103,7 @@ def _tulis_header(ws, data: list, dicetak_oleh: str, waktu_cetak: datetime):
         ("Tanggal Cetak", format_tanggal_indo(waktu_cetak)),
         ("Dicetak Oleh", dicetak_oleh or "-"),
         ("Jumlah Inspeksi", f"{len(data)} data"),
-        ("Ringkasan Status", f"ACCEPT: {jumlah_accept}  |  REJECT: {jumlah_reject}"),
+        ("Ringkasan Status", f"ACC: {jumlah_accept}  |  REJECT: {jumlah_reject}"),
     ]
 
     for i, ((label_kiri, isi_kiri), (label_kanan, isi_kanan)) in enumerate(zip(info_kiri, info_kanan)):
@@ -139,9 +139,9 @@ def _tulis_tabel(ws, data: list) -> int:
         nilai = [
             row["id"], row["jenis_benda"], row["diameter_mm"], row["zona"],
             row["a_babbit"], row["a_zone_a"], row["a_zone_c"],
-            row["a_unbond_zone_a"], row["persen_unbond_zone_a"], row["status_zone_a"],
-            row["a_unbond_zone_c"], row["persen_unbond_zone_c"], row["status_zone_c"],
-            row["status"], row.get("inspector") or "-", row.get("unit_asal") or "-",
+            row["a_unbond_zone_a"], row["persen_unbond_zone_a"], label_status(row["status_zone_a"]),
+            row["a_unbond_zone_c"], row["persen_unbond_zone_c"], label_status(row["status_zone_c"]),
+            label_status(row["status"]), row.get("inspector") or "-", row.get("unit_asal") or "-",
         ]
         for col_idx, isi in enumerate(nilai, start=1):
             cell = ws.cell(row=r, column=col_idx, value=isi)
@@ -153,7 +153,7 @@ def _tulis_tabel(ws, data: list) -> int:
             cell = ws.cell(row=r, column=col_idx)
             if cell.value is None:
                 continue
-            cell.fill = FILL_ACCEPT if cell.value == "ACCEPT" else FILL_REJECT
+            cell.fill = FILL_ACCEPT if cell.value == "ACC" else FILL_REJECT
             cell.font = Font(color="FFFFFF", bold=True)
             cell.alignment = Alignment(horizontal="center")
 

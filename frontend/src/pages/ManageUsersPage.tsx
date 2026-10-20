@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import Button from '../components/common/Button';
+import IconButton from '../components/common/IconButton';
 import { Badge } from '../components/common/StatusBadge';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import ErrorState from '../components/common/ErrorState';
@@ -43,7 +44,7 @@ function EyeToggle({ show, onToggle }: { show: boolean; onToggle: () => void }) 
       onMouseDown={(e) => e.preventDefault()}
       aria-label={show ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
       title={show ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
-      className="absolute bottom-0 right-0 top-[26px] flex w-11 cursor-pointer items-center justify-center rounded-md text-[#64748B] hover:text-[#0072CE] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0072CE]"
+      className="absolute bottom-0 right-0 top-[26px] flex w-11 cursor-pointer items-center justify-center rounded-md text-ndt-muted hover:text-ndt-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ndt-primary"
     >
       <EyeIcon off={show} />
     </button>
@@ -53,11 +54,11 @@ function EyeToggle({ show, onToggle }: { show: boolean; onToggle: () => void }) 
 /** Indikator langsung aturan 8–72 karakter (aturan backend tidak diubah). */
 function PasswordRule({ value }: { value: string }) {
   if (value.length === 0) {
-    return <p className="mt-1 text-xs text-[#64748B]">8 sampai 72 karakter.</p>;
+    return <p className="mt-1 text-xs text-ndt-muted">8 sampai 72 karakter.</p>;
   }
   const ok = validatePassword(value) === null;
   return (
-    <p className={`mt-1 text-xs font-medium ${ok ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
+    <p className={`mt-1 text-xs font-medium ${ok ? 'text-ndt-success' : 'text-ndt-danger'}`}>
       {ok ? '✓ Memenuhi ketentuan 8–72 karakter.' : '✗ Belum memenuhi ketentuan 8–72 karakter.'}
     </p>
   );
@@ -199,16 +200,16 @@ export default function ManageUsersPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Kelola Pengguna</h1>
-        <p className="text-sm text-[#64748B]">Buat dan kelola akun pengguna.</p>
+        <p className="text-sm text-ndt-muted">Buat dan kelola akun pengguna.</p>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-md bg-[#DC2626]/10 px-3 py-2 text-sm text-[#DC2626]">
+        <p role="alert" className="rounded-md bg-ndt-danger/10 px-3 py-2 text-sm text-ndt-danger">
           {error}
         </p>
       )}
       {notice && (
-        <p role="status" className="rounded-md bg-[#16A34A]/10 px-3 py-2 text-sm text-[#16A34A]">
+        <p role="status" className="rounded-md bg-ndt-success/10 px-3 py-2 text-sm text-ndt-success">
           {notice}
         </p>
       )}
@@ -237,10 +238,10 @@ export default function ManageUsersPage() {
       />
 
       <div className="grid gap-4 xl:grid-cols-[380px_1fr]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <form
             onSubmit={handleCreate}
-            className="space-y-3 rounded-lg border border-[#E2E8F0] bg-white p-4"
+            className="space-y-3 rounded-lg border border-ndt-border bg-white p-4"
           >
             <h2 className="text-[15px] font-semibold">Buat Akun Baru</h2>
             <Input
@@ -270,7 +271,7 @@ export default function ManageUsersPage() {
                 id="role"
                 value={role}
                 onChange={(e) => setRole(e.target.value as UserRole)}
-                className="w-full rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm focus:border-[#0072CE] focus:outline-none"
+                className="w-full rounded-md border border-ndt-border bg-white px-3 py-2 text-sm focus:border-ndt-primary focus:outline-none"
               >
                 <option value="staff">Staff</option>
                 <option value="admin">Admin</option>
@@ -281,13 +282,13 @@ export default function ManageUsersPage() {
             </Button>
           </form>
 
-          <div className="flex items-start gap-2 rounded-md border border-[#0072CE]/25 bg-[#E8F4FC] px-3 py-2.5" role="note">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#005B9A" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="mt-0.5 shrink-0">
+          <div className="flex items-start gap-2 rounded-md border border-ndt-primary/25 bg-ndt-primary-light px-3 py-2.5" role="note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="mt-0.5 shrink-0 text-ndt-primary-dark">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="16" x2="12" y2="12" />
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
-            <p className="text-[13px] leading-relaxed text-[#005B9A]">
+            <p className="text-[13px] leading-relaxed text-ndt-primary-dark">
               Tidak ada registrasi mandiri — akun hanya dibuat oleh admin.
             </p>
           </div>
@@ -295,7 +296,7 @@ export default function ManageUsersPage() {
           {resetTarget && (
             <form
               onSubmit={handleReset}
-              className="space-y-3 rounded-lg border border-[#0072CE]/40 bg-white p-4"
+              className="space-y-3 rounded-lg border border-ndt-primary/40 bg-white p-4"
             >
               <h2 className="text-[15px] font-semibold">Reset Kata Sandi: {resetTarget.username}</h2>
               <div className="relative">
@@ -328,15 +329,15 @@ export default function ManageUsersPage() {
           )}
         </div>
 
-        <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
+        <section className="min-w-0 rounded-lg border border-ndt-border bg-white p-4">
           <h2 className="text-[15px] font-semibold">Daftar Akun</h2>
           {users.length === 0 ? (
-            <p className="py-6 text-center text-sm text-[#64748B]">Belum ada akun.</p>
+            <p className="py-6 text-center text-sm text-ndt-muted">Belum ada akun.</p>
           ) : (
           <div className="mt-2 overflow-x-auto">
             <table className="w-full whitespace-nowrap text-left text-sm">
               <thead>
-                <tr className="border-b border-[#E2E8F0] text-xs text-[#64748B]">
+                <tr className="border-b border-ndt-border text-xs text-ndt-muted">
                   <th className="py-2 pr-4 font-medium">Nama Pengguna</th>
                   <th className="py-2 pr-4 font-medium">Peran</th>
                   <th className="py-2 pr-4 font-medium">Status</th>
@@ -347,16 +348,16 @@ export default function ManageUsersPage() {
                 {users.map((u) => {
                   const isSelf = u.id === me?.id;
                   return (
-                  <tr key={u.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#E8F4FC]">
+                  <tr key={u.id} className="border-b border-ndt-border last:border-0 hover:bg-ndt-primary-light">
                     <td className="py-2 pr-4">
                       <span className="flex items-center gap-2.5">
                         <span
                           aria-hidden="true"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E8F4FC] text-xs font-bold text-[#0072CE]"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ndt-primary-light text-xs font-bold text-ndt-primary"
                         >
                           {initials(u.username)}
                         </span>
-                        <span className="font-semibold text-[#172033]">{u.username}</span>
+                        <span className="font-semibold text-ndt-text">{u.username}</span>
                         {isSelf && <Badge tone="neutral" label="Anda" />}
                       </span>
                     </td>
@@ -371,39 +372,33 @@ export default function ManageUsersPage() {
                       )}
                     </td>
                     <td className="py-2">
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="secondary"
+                      <div className="flex gap-1.5">
+                        <IconButton
+                          label={u.aktif ? `Nonaktifkan akun ${u.username}` : `Aktifkan akun ${u.username}`}
+                          title={isSelf ? 'Anda tidak dapat menonaktifkan akun sendiri.' : undefined}
+                          tone={u.aktif ? 'danger' : 'success'}
                           onClick={() => setToggleTarget(u)}
                           disabled={isSelf}
-                          title={isSelf ? 'Anda tidak dapat menonaktifkan akun sendiri.' : u.aktif ? `Nonaktifkan akun ${u.username}` : `Aktifkan akun ${u.username}`}
-                          className={u.aktif ? 'hover:border-[#DC2626]/50 hover:text-[#DC2626]' : 'hover:border-[#16A34A]/50 hover:text-[#16A34A]'}
                         >
-                          <span className="inline-flex items-center gap-1.5">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-                              <line x1="12" y1="2" x2="12" y2="12" />
-                            </svg>
-                            {u.aktif ? 'Nonaktifkan' : 'Aktifkan'}
-                          </span>
-                        </Button>
-                        <Button
-                          variant="secondary"
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                            <line x1="12" y1="2" x2="12" y2="12" />
+                          </svg>
+                        </IconButton>
+                        <IconButton
+                          label={`Reset kata sandi ${u.username}`}
+                          tone="primary"
                           onClick={() => {
                             setResetTarget(u);
                             setResetPassword('');
                             setShowResetPassword(false);
                           }}
-                          title={`Reset kata sandi ${u.username}`}
                         >
-                          <span className="inline-flex items-center gap-1.5">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <rect x="3" y="11" width="18" height="11" rx="2" />
-                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                            </svg>
-                            Reset Kata Sandi
-                          </span>
-                        </Button>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <rect x="3" y="11" width="18" height="11" rx="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                        </IconButton>
                       </div>
                     </td>
                   </tr>

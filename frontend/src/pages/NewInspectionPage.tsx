@@ -56,6 +56,8 @@ export default function NewInspectionPage() {
   const [focusReq, setFocusReq] = useState<{ id: number; nonce: number } | null>(null);
   // Toast kecil untuk notifikasi sukses (otomatis hilang)
   const [toast, setToast] = useState<string | null>(null);
+  // Langkah yang sedang ditampilkan: 1 Data → 2 Gambar & Pemetaan → 3 Hasil
+  const [step, setStep] = useState<1 | 2 | 3>(() => (result !== null ? 3 : componentId !== null ? 2 : 1));
 
   function loadStandards() {
     setStandardsLoading(true);
@@ -75,6 +77,14 @@ export default function NewInspectionPage() {
   useEffect(() => {
     loadStandards();
   }, []);
+
+  // Workspace tersimpan di store (mis. kembali dari halaman lain): muat ulang detail komponennya
+  useEffect(() => {
+    if (componentId !== null && component === null) {
+      refreshComponent(componentId).catch(() => undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [componentId]);
 
   useEffect(() => {
     if (!toast) return;
@@ -124,7 +134,8 @@ export default function NewInspectionPage() {
       dispatch(setResult(null));
       dispatch(clearIndications());
       await refreshComponent(created.id);
-      setNotice(`Komponen #${created.id} dibuat. Lanjut unggah gambar.`);
+      setNotice(`Komponen #${created.id} dibuat. Lanjut unggah gambar dan petakan indikasi.`);
+      setStep(2);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal membuat komponen.');
     } finally {
@@ -217,6 +228,7 @@ export default function NewInspectionPage() {
       dispatch(setResult(hasil));
       await refreshComponent(componentId);
       setNotice('Inspeksi berhasil disimpan. Hasil dihitung oleh backend.');
+      setStep(3);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menghitung.');
     } finally {
@@ -233,6 +245,7 @@ export default function NewInspectionPage() {
     setFocusReq(null);
     setError(null);
     setNotice(null);
+    setStep(1);
   }
 
   /** Klik row → highlight marker + center-kan di canvas. */
@@ -262,73 +275,87 @@ export default function NewInspectionPage() {
   if (standardsLoading) return <Loading label="Memuat standar..." />;
   if (standardsError) return <ErrorState message={standardsError} onRetry={loadStandards} />;
 
+  /** Langkah bisa dibuka kalau datanya sudah ada. */
+  const canOpen = (n: number) => n === 1 || (n === 2 && componentId !== null) || (n === 3 && result !== null);
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Inspeksi Baru</h1>
-          <p className="text-sm text-[#64748B]">Input, pemetaan, perhitungan, dan evaluasi</p>
+          <p className="text-sm text-ndt-muted">Input, pemetaan, perhitungan, dan evaluasi</p>
         </div>
         {componentId !== null && (
           <Button variant="secondary" onClick={handleReset}>
-            Batal
+            {result ? 'Inspeksi Baru' : 'Batal'}
           </Button>
         )}
       </div>
 
+      <ol className="flex items-center gap-1 rounded-lg border border-ndt-border bg-white px-3 py-3 sm:gap-2 sm:px-4" aria-label="Tahapan inspeksi">
+        {steps.map((s, idx) => {
+          const current = step === s.n;
+          return (
+            <li key={s.n} className="flex min-w-0 flex-1 items-center gap-2 last:flex-none">
+              <button
+                type="button"
+                onClick={() => setStep(s.n as 1 | 2 | 3)}
+                disabled={!canOpen(s.n)}
+                aria-current={current ? 'step' : undefined}
+                className="flex min-w-0 items-center gap-2 rounded-md py-0.5 pr-1 disabled:cursor-not-allowed"
+              >
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${
+                    current
+                      ? 'bg-ndt-primary text-white ring-4 ring-ndt-primary/15'
+                      : s.state === 'done'
+                        ? 'bg-ndt-primary-light text-ndt-primary'
+                        : s.state === 'active'
+                          ? 'border-2 border-ndt-primary text-ndt-primary'
+                          : 'border border-ndt-border text-ndt-muted'
+                  }`}
+                >
+                  {s.state === 'done' && !current ? '✓' : s.n}
+                </span>
+                <span
+                  className={`truncate text-[13px] ${current ? 'font-semibold text-ndt-text' : s.state === 'todo' ? 'font-medium text-ndt-muted' : 'font-medium text-ndt-text'}`}
+                >
+                  {s.label}
+                </span>
+              </button>
+              {idx < steps.length - 1 && (
+                <span aria-hidden="true" className="mx-1 h-px min-w-3 flex-1 bg-ndt-border sm:min-w-6" />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+
       {error && (
-        <p role="alert" className="rounded-md bg-[#DC2626]/10 px-3 py-2 text-sm text-[#DC2626]">
+        <p role="alert" className="rounded-md bg-ndt-danger/10 px-3 py-2 text-sm text-ndt-danger">
           {error}
         </p>
       )}
       {notice && (
-        <p role="status" className="rounded-md bg-[#16A34A]/10 px-3 py-2 text-sm text-[#16A34A]">
+        <p role="status" className="rounded-md bg-ndt-success/10 px-3 py-2 text-sm text-ndt-success">
           {notice}
         </p>
       )}
 
-      {componentId !== null && (
-        <ol className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3 sm:gap-2" aria-label="Tahapan inspeksi">
-          {steps.map((s, idx) => (
-            <li key={s.n} className="flex min-w-0 flex-1 items-center gap-2 last:flex-none">
-              <span
-                aria-current={s.state === 'active' ? 'step' : undefined}
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${
-                  s.state === 'done'
-                    ? 'bg-[#0072CE] text-white'
-                    : s.state === 'active'
-                      ? 'border-2 border-[#0072CE] text-[#0072CE]'
-                      : 'border border-[#E2E8F0] text-[#64748B]'
-                }`}
-              >
-                {s.state === 'done' ? '✓' : s.n}
-              </span>
-              <span
-                className={`truncate text-[13px] font-medium ${
-                  s.state === 'todo' ? 'text-[#64748B]' : 'text-[#172033]'
-                }`}
-              >
-                {s.label}
-              </span>
-              {idx < steps.length - 1 && (
-                <span aria-hidden="true" className="mx-1 h-px min-w-3 flex-1 bg-[#E2E8F0] sm:min-w-6" />
-              )}
-            </li>
-          ))}
-        </ol>
-      )}
-
-      <div className="grid gap-4 xl:grid-cols-[380px_1fr]">
-        {/* Kolom kiri: form + calculation */}
-        <div className="space-y-4">
-          <form
-            onSubmit={handleCreate}
-            className="space-y-4 rounded-lg border border-[#E2E8F0] bg-white p-4"
-          >
+      {/* Langkah 1: Data inspeksi */}
+      {step === 1 && (
+        <form onSubmit={handleCreate} className="rounded-lg border border-ndt-border bg-white p-4 sm:p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-[15px] font-semibold">Data Inspeksi</h2>
-
-            <fieldset>
-              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+            {componentId !== null && (
+              <p className="text-xs text-ndt-muted">
+                Menyimpan perubahan akan membuat komponen baru (indikasi perlu dipetakan ulang).
+              </p>
+            )}
+          </div>
+          <div className="mt-4 grid gap-x-6 gap-y-5 lg:grid-cols-3">
+            <fieldset className="min-w-0">
+              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-ndt-muted">
                 Identitas Komponen
               </legend>
               <Input
@@ -346,24 +373,23 @@ export default function NewInspectionPage() {
                 />
               </div>
             </fieldset>
-
-            <fieldset>
-              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+            <fieldset className="min-w-0">
+              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-ndt-muted">
                 Dimensi
               </legend>
-              <label className="mb-2 flex items-center gap-2 text-sm text-[#172033]">
+              <label className="mb-2 flex items-center gap-2 text-sm text-ndt-text">
                 <input
                   type="checkbox"
                   checked={form.pakaiPManual}
                   onChange={(e) => dispatch(setForm({ pakaiPManual: e.target.checked }))}
-                  className="h-4 w-4 accent-[#0072CE]"
+                  className="h-4 w-4 accent-ndt-primary"
                 />
                   Panjang (P) sudah diketahui, isi langsung tanpa Diameter
               </label>
               <div className="grid grid-cols-2 gap-3">
                 {form.pakaiPManual ? (
                   <Input
-                    label="Pamjang / Keliling Pad"
+                    label="Panjang / Keliling Pad"
                     type="number"
                     step="any"
                     suffix="mm"
@@ -400,9 +426,8 @@ export default function NewInspectionPage() {
                 />
               </div>
             </fieldset>
-
-            <fieldset>
-              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
+            <fieldset className="min-w-0">
+              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-ndt-muted">
                 Pengaturan Inspeksi
               </legend>
               <div className="space-y-3">
@@ -418,14 +443,14 @@ export default function NewInspectionPage() {
                   hint="Default 10% dari Lebar (L) (DOD-STD-2183). Boleh diubah manual, mis. untuk pad/sepatu."
                 />
                 <div>
-                  <label htmlFor="bearing-inspection" className="mb-1.5 block text-sm font-medium text-[#172033]">
+                  <label htmlFor="bearing-inspection" className="mb-1.5 block text-sm font-medium text-ndt-text">
                     Bearing Inspection
                   </label>
                   <select
                     id="bearing-inspection"
                     value={form.zona}
                     onChange={(e) => dispatch(setForm({ zona: e.target.value }))}
-                    className="w-full rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#172033] focus:border-[#0072CE] focus:outline-none focus:ring-[3px] focus:ring-[#0072CE]/15"
+                    className="w-full rounded-md border border-ndt-border bg-white px-3 py-2 text-sm text-ndt-text focus:border-ndt-primary focus:outline-none focus:ring-[3px] focus:ring-ndt-primary/15"
                   >
                     <option value="">-- Pilih bearing inspection --</option>
                     <option value="Upper">Upper</option>
@@ -439,7 +464,7 @@ export default function NewInspectionPage() {
                   hint="Otomatis dari akun yang sedang login."
                 />
                 <div>
-                  <label htmlFor="standard" className="mb-1.5 block text-sm font-medium text-[#172033]">
+                  <label htmlFor="standard" className="mb-1.5 block text-sm font-medium text-ndt-text">
                     Standar
                   </label>
                   <select
@@ -448,7 +473,7 @@ export default function NewInspectionPage() {
                     onChange={(e) =>
                       dispatch(setForm({ standardId: e.target.value === '' ? '' : Number(e.target.value) }))
                     }
-                    className="w-full rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#172033] focus:border-[#0072CE] focus:outline-none focus:ring-[3px] focus:ring-[#0072CE]/15"
+                    className="w-full rounded-md border border-ndt-border bg-white px-3 py-2 text-sm text-ndt-text focus:border-ndt-primary focus:outline-none focus:ring-[3px] focus:ring-ndt-primary/15"
                   >
                     <option value="">-- Pilih standar --</option>
                     {standards.map((s) => (
@@ -460,202 +485,208 @@ export default function NewInspectionPage() {
                 </div>
               </div>
             </fieldset>
-            <Button type="submit" loading={busy} className="w-full">
-              {componentId === null ? 'Buat Inspeksi' : 'Perbarui & Buat Ulang'}
+          </div>
+          <div className="mt-5 flex flex-col-reverse gap-2 border-t border-ndt-border pt-4 sm:flex-row sm:justify-end">
+            {componentId !== null && (
+              <Button type="button" variant="secondary" onClick={() => setStep(2)}>
+                Lanjut ke Pemetaan tanpa Perubahan
+              </Button>
+            )}
+            <Button type="submit" loading={busy} className="sm:min-w-48">
+              {componentId === null ? 'Buat Inspeksi & Lanjut' : 'Perbarui & Buat Ulang'}
             </Button>
-          </form>
+          </div>
+        </form>
+      )}
 
-          {result && (
-            <>
-              <CalculationSummary result={result} standard={activeStandard} emphasize />
-              <EvaluationResultCard result={result} size="lg" />
-              <CriteriaComparison result={result} />
-              <div className="flex gap-2">
-                <Link
-                  to="/inspection/history"
-                  className="flex-1 rounded-md border border-[#E2E8F0] bg-white px-4 py-2 text-center text-sm font-medium text-[#172033] hover:bg-[#E8F4FC]"
-                >
-                  Lihat Riwayat
-                </Link>
-                <Button onClick={handleReset} className="flex-1">
-                  Simpan & Baru
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Kolom kanan: drawing + indikasi */}
-        <div className="space-y-4">
-          <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
+      {/* Langkah 2: Gambar & pemetaan indikasi */}
+      {step === 2 && componentId !== null && (
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <section className="min-w-0 rounded-lg border border-ndt-border bg-white p-4">
             <h2 className="text-[15px] font-semibold">Pemetaan Inspeksi 2D</h2>
-            {componentId === null ? (
-              <div className="mt-3 flex flex-col items-center rounded-lg border border-dashed border-[#E2E8F0] bg-[#F5F7FA] px-4 py-10 text-center">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="9" cy="9" r="2" />
-                  <path d="M21 15l-5-5L5 21" />
-                </svg>
-                <p className="mt-3 text-sm font-medium text-[#172033]">Belum ada inspeksi</p>
-                <p className="mt-1 max-w-xs text-[13px] text-[#64748B]">
-                  Buat inspeksi terlebih dahulu, lalu unggah gambar di sini.
-                </p>
-              </div>
-            ) : (
+            {gambarUrl ? (
               <>
-                {gambarUrl ? (
-                  <>
-                    <div className="mt-2 flex items-center gap-2 rounded-md border border-[#0284C7]/25 bg-[#0284C7]/[0.07] px-3 py-2 text-[13px] text-[#0284C7]" role="note">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="shrink-0">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="16" x2="12" y2="12" />
-                        <line x1="12" y1="8" x2="12.01" y2="8" />
-                      </svg>
-                      Geser untuk pan · Klik gambar untuk menambahkan indikasi.
-                    </div>
-                    <div className="mt-3 max-h-[620px] overflow-auto rounded-md">
-                      <Suspense fallback={<Loading label="Memuat kanvas..." />}>
-                        <MappingCanvas
-                          imageUrl={gambarUrl}
-                          indications={indications}
-                          selectedId={selectedId}
-                          onSelect={(id) => dispatch(selectIndication(id))}
-                          onCanvasClick={handleCanvasClick}
-                          focusRequest={focusReq}
-                          showHint={false}
-                          toolbarExtra={
-                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-[#E2E8F0] bg-white px-2.5 py-1 text-sm font-medium text-[#172033] hover:bg-[#E8F4FC]" title="Ganti gambar drawing">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <path d="M17 8l-5-5-5 5" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
-                              </svg>
-                              Ganti Gambar
-                              <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
-                            </label>
-                          }
-                        />
-                      </Suspense>
-                    </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-[#64748B]" aria-label="Legenda marker">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span aria-hidden="true" className="inline-block h-3 w-4 rounded-full border-2 border-[#DC2626] bg-[#DC2626]/25" />
-                        Indikasi
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <span aria-hidden="true" className="inline-block h-3 w-4 rounded-full border-2 border-[#0072CE]" />
-                        Terpilih
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-3">
-                    <label className="flex cursor-pointer flex-col items-center rounded-lg border border-dashed border-[#E2E8F0] bg-[#F5F7FA] px-4 py-10 text-center hover:border-[#0072CE]/50 hover:bg-[#E8F4FC]/50">
-                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0072CE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <path d="M17 8l-5-5-5 5" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                      </svg>
-                      <span className="mt-3 text-sm font-medium text-[#172033]">Unggah gambar (PNG/JPG)</span>
-                      <span className="mt-1 text-xs text-[#64748B]">Maksimal 10 MB · klik untuk memilih file</span>
-                      <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
-                    </label>
-                  </div>
-                )}
+                <div className="mt-2 flex items-center gap-2 rounded-md border border-ndt-info/25 bg-ndt-info/[0.07] px-3 py-2 text-[13px] text-ndt-info" role="note">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="shrink-0">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                  Geser untuk pan · Klik gambar untuk menambahkan indikasi.
+                </div>
+                <div className="mt-3 max-h-[620px] overflow-auto rounded-md">
+                  <Suspense fallback={<Loading label="Memuat kanvas..." />}>
+                    <MappingCanvas
+                      imageUrl={gambarUrl}
+                      indications={indications}
+                      selectedId={selectedId}
+                      onSelect={(id) => dispatch(selectIndication(id))}
+                      onCanvasClick={handleCanvasClick}
+                      focusRequest={focusReq}
+                      showHint={false}
+                      toolbarExtra={
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-ndt-border bg-white px-2.5 py-1 text-sm font-medium text-ndt-text hover:bg-ndt-primary-light" title="Ganti gambar drawing">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <path d="M17 8l-5-5-5 5" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                          </svg>
+                          Ganti Gambar
+                          <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
+                        </label>
+                      }
+                    />
+                  </Suspense>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-ndt-muted" aria-label="Legenda marker">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span aria-hidden="true" className="inline-block h-3 w-4 rounded-full border-2 border-ndt-danger bg-ndt-danger/25" />
+                    Indikasi
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span aria-hidden="true" className="inline-block h-3 w-4 rounded-full border-2 border-ndt-primary" />
+                    Terpilih
+                  </span>
+                </div>
               </>
+            ) : (
+              <div className="mt-3">
+                <label className="flex cursor-pointer flex-col items-center rounded-lg border border-dashed border-ndt-border bg-ndt-bg px-4 py-10 text-center hover:border-ndt-primary/50 hover:bg-ndt-primary-light/50">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-ndt-primary" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <path d="M17 8l-5-5-5 5" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span className="mt-3 text-sm font-medium text-ndt-text">Unggah gambar (PNG/JPG)</span>
+                  <span className="mt-1 text-xs text-ndt-muted">Maksimal 10 MB · klik untuk memilih file</span>
+                  <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
+                </label>
+              </div>
             )}
           </section>
 
-          {addPos && (
-            <IndicationModal
-              key={`add-${addPos.x}-${addPos.y}`}
-              title="Tambah Indikasi"
-              coordinateText={`X: ${addPos.x} — Y: ${addPos.y}`}
-              initialZona="C"
-              initialPanjang=""
-              initialLebar=""
-              saving={modalSaving}
-              submitLabel="Tambah Indikasi"
-              onClose={() => setAddPos(null)}
-              onSubmit={handleAddSubmit}
-            />
-          )}
-
-          {editing && (
-            <IndicationModal
-              key={`edit-${editing.id}`}
-              title={`Ubah Indikasi #${indications.findIndex((i) => i.id === editing.id) + 1}`}
-              coordinateText={`X: ${editing.posisi_x ?? '-'} — Y: ${editing.posisi_y ?? '-'}`}
-              initialZona={editing.zona}
-              initialPanjang={String(editing.panjang_mm)}
-              initialLebar={String(editing.lebar_mm)}
-              initialBuktiUrl={editing.bukti_path ? inspectionService.imageUrl(editing.bukti_path) : null}
-              saving={modalSaving}
-              submitLabel="Simpan Perubahan"
-              onClose={() => setEditing(null)}
-              onSubmit={handleEditSubmit}
-            />
-          )}
-
-          {buktiView && (
-            <Modal
-              title={`Foto Bukti — Indikasi #${buktiView.nomor}`}
-              onClose={() => setBuktiView(null)}
-            >
-              <img
-                src={buktiView.url}
-                alt={`Foto bukti indikasi #${buktiView.nomor}`}
-                className="max-h-[60vh] w-full rounded-lg border border-[#E2E8F0] object-contain"
+          <section className="min-w-0 rounded-lg border border-ndt-border bg-white p-4 xl:sticky xl:top-4">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-[15px] font-semibold">Detail Indikasi</h2>
+              <span className="text-xs tabular-nums text-ndt-muted">{indications.length} indikasi</span>
+            </div>
+            <div className="mt-2">
+              <IndicationTable
+                items={indications}
+                selectedId={selectedId}
+                onSelect={handleSelectRow}
+                onEdit={(ind) => {
+                  setAddPos(null);
+                  setEditing(ind);
+                }}
+                onViewBukti={(ind) => {
+                  const url = ind.bukti_path ? inspectionService.imageUrl(ind.bukti_path) : null;
+                  if (!url) return;
+                  const nomor = indications.findIndex((x) => x.id === ind.id) + 1;
+                  setBuktiView({ url, nomor });
+                }}
               />
-            </Modal>
-          )}
-
-          {componentId !== null && (
-            <section className="rounded-lg border border-[#E2E8F0] bg-white p-4">
-              <h3 className="text-[15px] font-semibold">Detail Indikasi</h3>
-              <div className="mt-2">
-                <IndicationTable
-                  items={indications}
-                  selectedId={selectedId}
-                  onSelect={handleSelectRow}
-                  onEdit={(ind) => {
-                    setAddPos(null);
-                    setEditing(ind);
-                  }}
-                  onViewBukti={(ind) => {
-                    const url = ind.bukti_path ? inspectionService.imageUrl(ind.bukti_path) : null;
-                    if (!url) return;
-                    const nomor = indications.findIndex((x) => x.id === ind.id) + 1;
-                    setBuktiView({ url, nomor });
-                  }}
-                />
-              </div>
-              {result && <IndicationTotals result={result} indications={indications} />}
-              <div className="mt-3">
-                <Button
-                  onClick={handleCalculate}
-                  loading={busy}
-                  disabled={indications.length === 0}
-                  variant={indications.length === 0 ? 'secondary' : 'primary'}
-                  className={
-                    indications.length === 0
-                      ? 'cursor-not-allowed bg-[#F5F7FA] text-[#64748B] hover:bg-[#F5F7FA]'
-                      : ''
-                  }
-                >
-                  Simpan Inspeksi (Hitung & Evaluasi)
-                </Button>
-              </div>
-            </section>
-          )}
+            </div>
+            <div className="mt-4 flex flex-col gap-2 border-t border-ndt-border pt-4 sm:flex-row sm:justify-between">
+              <Button variant="secondary" onClick={() => setStep(1)}>
+                ← Data Inspeksi
+              </Button>
+              <Button
+                onClick={handleCalculate}
+                loading={busy}
+                disabled={indications.length === 0}
+                title={indications.length === 0 ? 'Tambahkan minimal satu indikasi terlebih dahulu' : undefined}
+              >
+                Simpan & Hitung Hasil →
+              </Button>
+            </div>
+          </section>
         </div>
-      </div>
+      )}
+
+      {/* Langkah 3: Hasil evaluasi */}
+      {step === 3 && result && (
+        <div className="space-y-4">
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <div className="min-w-0 space-y-4">
+              <EvaluationResultCard result={result} size="lg" />
+              <CriteriaComparison result={result} />
+            </div>
+            <div className="min-w-0 space-y-4">
+              <CalculationSummary result={result} standard={activeStandard} emphasize />
+              <section className="rounded-lg border border-ndt-border bg-white p-4">
+                <h2 className="text-[15px] font-semibold">Total Indikasi per Zona</h2>
+                <IndicationTotals result={result} indications={indications} />
+              </section>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 rounded-lg border border-ndt-border bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+            <Button variant="secondary" onClick={() => setStep(2)}>
+              ← Ubah Pemetaan
+            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Link
+                to="/inspection/history"
+                className="rounded-md border border-ndt-border bg-white px-4 py-2 text-center text-sm font-medium text-ndt-text hover:bg-ndt-primary-light"
+              >
+                Lihat Riwayat
+              </Link>
+              <Button onClick={handleReset}>Selesai & Inspeksi Baru</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {addPos && (
+        <IndicationModal
+          key={`add-${addPos.x}-${addPos.y}`}
+          title="Tambah Indikasi"
+          coordinateText={`X: ${addPos.x} — Y: ${addPos.y}`}
+          initialZona="C"
+          initialPanjang=""
+          initialLebar=""
+          saving={modalSaving}
+          submitLabel="Tambah Indikasi"
+          onClose={() => setAddPos(null)}
+          onSubmit={handleAddSubmit}
+        />
+      )}
+
+      {editing && (
+        <IndicationModal
+          key={`edit-${editing.id}`}
+          title={`Ubah Indikasi #${indications.findIndex((i) => i.id === editing.id) + 1}`}
+          coordinateText={`X: ${editing.posisi_x ?? '-'} — Y: ${editing.posisi_y ?? '-'}`}
+          initialZona={editing.zona}
+          initialPanjang={String(editing.panjang_mm)}
+          initialLebar={String(editing.lebar_mm)}
+          initialBuktiUrl={editing.bukti_path ? inspectionService.imageUrl(editing.bukti_path) : null}
+          saving={modalSaving}
+          submitLabel="Simpan Perubahan"
+          onClose={() => setEditing(null)}
+          onSubmit={handleEditSubmit}
+        />
+      )}
+
+      {buktiView && (
+        <Modal
+          title={`Foto Bukti — Indikasi #${buktiView.nomor}`}
+          onClose={() => setBuktiView(null)}
+        >
+          <img
+            src={buktiView.url}
+            alt={`Foto bukti indikasi #${buktiView.nomor}`}
+            className="max-h-[60vh] w-full rounded-lg border border-ndt-border object-contain"
+          />
+        </Modal>
+      )}
+
       {toast && (
         <div
           role="status"
-          className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-lg border border-[#16A34A]/30 bg-white px-4 py-2.5 text-sm font-medium text-[#16A34A] shadow-[0_8px_24px_rgba(23,32,51,0.12)]"
+          className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-lg border border-ndt-success/30 bg-white px-4 py-2.5 text-sm font-medium text-ndt-success shadow-[0_8px_24px_rgba(23,32,51,0.12)]"
         >
-          <span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full bg-[#16A34A] text-xs font-bold text-white">
+          <span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full bg-ndt-success text-xs font-bold text-white">
             ✓
           </span>
           {toast}

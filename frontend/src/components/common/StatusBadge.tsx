@@ -5,11 +5,11 @@ import { displayStatus } from '../../utils/format';
 export type BadgeTone = 'success' | 'danger' | 'neutral' | 'warning' | 'info';
 
 const TONE_STYLES: Record<BadgeTone, string> = {
-  success: 'bg-[#16A34A]/10 text-[#16A34A]',
-  danger: 'bg-[#DC2626]/10 text-[#DC2626]',
-  neutral: 'bg-[#64748B]/10 text-[#64748B]',
-  warning: 'bg-[#F59E0B]/15 text-[#B45309]',
-  info: 'bg-[#0284C7]/10 text-[#0284C7]',
+  success: 'bg-ndt-success/10 text-ndt-success',
+  danger: 'bg-ndt-danger/10 text-ndt-danger',
+  neutral: 'bg-ndt-muted/10 text-ndt-muted',
+  warning: 'bg-ndt-warning/15 text-ndt-warning-dark',
+  info: 'bg-ndt-info/10 text-ndt-info',
 };
 
 /**

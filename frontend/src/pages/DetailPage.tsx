@@ -10,7 +10,7 @@ import CriteriaComparison from '../components/inspection/CriteriaComparison';
 import IndicationTotals from '../components/inspection/IndicationTotals';
 import { inspectionService } from '../services/inspectionService';
 import type { ComponentDetail, ResultRow, Standard } from '../types/index';
-import { formatNumber } from '../utils/format';
+import { formatNumber, isPercentAbnormal } from '../utils/format';
 
 /** Canvas yang sama dengan New Inspection, dipakai read-only (code-split). */
 const MappingCanvas = lazy(() => import('../components/inspection/MappingCanvas'));
@@ -132,7 +132,10 @@ export default function DetailPage() {
     result.a_unbond_zone_a, result.a_unbond_zone_c, result.a_bond_zone_a, result.a_bond_zone_c,
     result.persen_unbond_zone_a, result.persen_unbond_zone_c,
   ];
-  const adaTidakValid = angkaPenting.some((v) => v === null || v === undefined || (typeof v === 'number' && (Number.isNaN(v) || v < 0)));
+  const adaTidakValid =
+    angkaPenting.some((v) => v === null || v === undefined || (typeof v === 'number' && (Number.isNaN(v) || v < 0))) ||
+    isPercentAbnormal(result.persen_unbond_zone_a) ||
+    isPercentAbnormal(result.persen_unbond_zone_c);
 
   // Penyebab REJECT per zona dari data aktual (tanpa menebak aturan individual)
   const sebab: string[] = [];
@@ -160,26 +163,26 @@ export default function DetailPage() {
     return (
       <div
         className={`rounded-lg border p-3 ${
-          lolos ? 'border-[#16A34A]/30 bg-[#16A34A]/[0.05]' : 'border-[#DC2626]/30 bg-[#DC2626]/[0.05]'
+          lolos ? 'border-ndt-success/30 bg-ndt-success/[0.05]' : 'border-ndt-danger/30 bg-ndt-danger/[0.05]'
         }`}
       >
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-[#172033]">Zona {zona}</span>
+          <span className="text-sm font-semibold text-ndt-text">Zona {zona}</span>
           {status === 'ACCEPT' || status === 'REJECT' ? (
             <StatusBadge status={status} />
           ) : (
             <Badge tone="neutral" label="-" />
           )}
         </div>
-        <p className="mt-1 text-lg font-bold tabular-nums text-[#172033]">
+        <p className="mt-1 text-lg font-bold tabular-nums text-ndt-text">
           {validNumber(persen) ? `${formatNumber(persen)}%` : '—'}
-          <span className="ml-1 text-[13px] font-medium text-[#64748B]">
+          <span className="ml-1 text-[13px] font-medium text-ndt-muted">
             / {toleransi !== null ? `≤ ${formatNumber(toleransi)}%` : '—'}
           </span>
         </p>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#E2E8F0]" aria-hidden="true">
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ndt-border" aria-hidden="true">
           <div
-            className={`h-full rounded-full ${lolos ? 'bg-[#16A34A]' : 'bg-[#DC2626]'}`}
+            className={`h-full rounded-full ${lolos ? 'bg-ndt-success' : 'bg-ndt-danger'}`}
             style={{ width: `${bar}%` }}
           />
         </div>
@@ -198,13 +201,13 @@ export default function DetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <nav className="text-[13px]" aria-label="Breadcrumb">
-            <Link to="/inspection/history" className="font-medium text-[#0072CE] hover:underline">
+            <Link to="/inspection/history" className="font-medium text-ndt-primary hover:underline">
               Riwayat Inspeksi
             </Link>
-            <span aria-hidden="true" className="mx-1.5 text-[#64748B]">/</span>
-            <span className="text-[#64748B]">Detail #{result.id}</span>
+            <span aria-hidden="true" className="mx-1.5 text-ndt-muted">/</span>
+            <span className="text-ndt-muted">Detail #{result.id}</span>
           </nav>
-          <h1 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-semibold text-[#172033]">
+          <h1 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-semibold text-ndt-text">
             Detail Inspeksi #{result.id}
             <StatusBadge status={result.status} />
           </h1>
@@ -218,7 +221,7 @@ export default function DetailPage() {
                 .downloadReportPdf(result.id)
                 .catch((err: unknown) => setDlError(err instanceof Error ? err.message : 'Gagal mengunduh PDF.'));
             }}
-            className="inline-flex items-center gap-1.5 rounded-md bg-[#0072CE] px-4 py-2 text-sm font-medium text-white hover:bg-[#005B9A]"
+            className="inline-flex items-center gap-1.5 rounded-md bg-ndt-primary px-4 py-2 text-sm font-medium text-white hover:bg-ndt-primary-dark"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -230,7 +233,7 @@ export default function DetailPage() {
         </div>
       </div>
       {dlError && (
-        <p role="alert" className="rounded-md bg-[#DC2626]/10 px-3 py-2 text-sm text-[#DC2626]">
+        <p role="alert" className="rounded-md bg-ndt-danger/10 px-3 py-2 text-sm text-ndt-danger">
           {dlError}
         </p>
       )}
@@ -239,34 +242,34 @@ export default function DetailPage() {
       <section
         aria-label="Ringkasan hasil"
         className={`rounded-lg border-l-4 p-4 ${
-          ok ? 'border-[#16A34A] bg-[#16A34A]/[0.06]' : 'border-[#DC2626] bg-[#DC2626]/[0.06]'
+          ok ? 'border-ndt-success bg-ndt-success/[0.06]' : 'border-ndt-danger bg-ndt-danger/[0.06]'
         }`}
       >
         <div className="flex items-start gap-2.5">
-          <span aria-hidden="true" className={`text-xl leading-none ${ok ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
+          <span aria-hidden="true" className={`text-xl leading-none ${ok ? 'text-ndt-success' : 'text-ndt-danger'}`}>
             {ok ? '✓' : '⚠'}
           </span>
           <div className="min-w-0 flex-1">
-            <p className={`text-[15px] font-bold ${ok ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
+            <p className={`text-[15px] font-bold ${ok ? 'text-ndt-success' : 'text-ndt-danger'}`}>
               {ok ? 'ACC — Memenuhi kriteria penerimaan' : 'REJECT — Melebihi batas toleransi'}
             </p>
             {!ok && sebab.length > 0 && (
-              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-[13px] text-[#172033]">
+              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-[13px] text-ndt-text">
                 {sebab.map((s) => (
                   <li key={s}>{s}</li>
                 ))}
               </ul>
             )}
             <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
-              <span className="tabular-nums text-[#172033]">
-                % Unbound Zona A:{' '}
+              <span className="tabular-nums text-ndt-text">
+                % Unbond Zona A:{' '}
                 <strong>{validNumber(result.persen_unbond_zone_a) ? `${formatNumber(result.persen_unbond_zone_a)}%` : '—'}</strong>
-                <span className="text-[#64748B]"> / {toleransi !== null ? `≤ ${formatNumber(toleransi)}%` : '—'}</span>
+                <span className="text-ndt-muted"> / {toleransi !== null ? `≤ ${formatNumber(toleransi)}%` : '—'}</span>
               </span>
-              <span className="tabular-nums text-[#172033]">
-                % Unbound Zona C:{' '}
+              <span className="tabular-nums text-ndt-text">
+                % Unbond Zona C:{' '}
                 <strong>{validNumber(result.persen_unbond_zone_c) ? `${formatNumber(result.persen_unbond_zone_c)}%` : '—'}</strong>
-                <span className="text-[#64748B]"> / {toleransi !== null ? `≤ ${formatNumber(toleransi)}%` : '—'}</span>
+                <span className="text-ndt-muted"> / {toleransi !== null ? `≤ ${formatNumber(toleransi)}%` : '—'}</span>
               </span>
             </div>
           </div>
@@ -277,7 +280,7 @@ export default function DetailPage() {
         <p
           role="alert"
           title="Nilai tidak valid, periksa data indikasi"
-          className="flex items-start gap-2 rounded-md border border-[#F59E0B]/40 bg-[#F59E0B]/10 px-3 py-2 text-sm font-medium text-[#B45309]"
+          className="flex items-start gap-2 rounded-md border border-ndt-warning/40 bg-ndt-warning/10 px-3 py-2 text-sm font-medium text-ndt-warning-dark"
         >
           <span aria-hidden="true">⚠</span>
           Nilai tidak valid, periksa data indikasi.
@@ -285,28 +288,28 @@ export default function DetailPage() {
       )}
 
       {/* 3. Informasi inspeksi */}
-      <section className="rounded-lg border border-[#E2E8F0] bg-white p-5" aria-label="Informasi inspeksi">
-        <h2 className="text-[15px] font-semibold text-[#172033]">Informasi Inspeksi</h2>
+      <section className="rounded-lg border border-ndt-border bg-white p-5" aria-label="Informasi inspeksi">
+        <h2 className="text-[15px] font-semibold text-ndt-text">Informasi Inspeksi</h2>
         <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-4">
           <div>
-            <dt className="text-xs text-[#64748B]">Komponen</dt>
-            <dd className="mt-0.5 text-sm font-semibold capitalize text-[#172033]">{result.jenis_benda}</dd>
+            <dt className="text-xs text-ndt-muted">Komponen</dt>
+            <dd className="mt-0.5 text-sm font-semibold capitalize text-ndt-text">{result.jenis_benda}</dd>
           </div>
           <div>
-            <dt className="text-xs text-[#64748B]">Diameter</dt>
-            <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[#172033]">
+            <dt className="text-xs text-ndt-muted">Diameter</dt>
+            <dd className="mt-0.5 text-sm font-semibold tabular-nums text-ndt-text">
               {component && component.diameter_mm > 0 ? `${formatNumber(component.diameter_mm)} mm` : '-'}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-[#64748B]">Lebar (L)</dt>
-            <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[#172033]">
+            <dt className="text-xs text-ndt-muted">Lebar (L)</dt>
+            <dd className="mt-0.5 text-sm font-semibold tabular-nums text-ndt-text">
               {component ? `${formatNumber(component.panjang_l_mm)} mm` : '—'}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-[#64748B]">Lebar Zona A</dt>
-            <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[#172033]">
+            <dt className="text-xs text-ndt-muted">Lebar Zona A</dt>
+            <dd className="mt-0.5 text-sm font-semibold tabular-nums text-ndt-text">
               {validNumber(component?.lebar_zona_a_mm)
                 ? `${formatNumber(component!.lebar_zona_a_mm as number)} mm`
                 : standard && validNumber(standard.lebar_zona_a_mm)
@@ -315,65 +318,65 @@ export default function DetailPage() {
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-[#64748B]">Unit Asal</dt>
-            <dd className="mt-0.5 text-sm font-semibold text-[#172033]">{component?.unit_asal || '-'}</dd>
+            <dt className="text-xs text-ndt-muted">Unit Asal</dt>
+            <dd className="mt-0.5 text-sm font-semibold text-ndt-text">{component?.unit_asal || '-'}</dd>
           </div>
           <div>
-            <dt className="text-xs text-[#64748B]">Standar</dt>
-            <dd className="mt-0.5 text-sm font-semibold text-[#172033]">{standard ? standard.nama_standard : '—'}</dd>
+            <dt className="text-xs text-ndt-muted">Standar</dt>
+            <dd className="mt-0.5 text-sm font-semibold text-ndt-text">{standard ? standard.nama_standard : '—'}</dd>
           </div>
           <div>
-            <dt className="text-xs text-[#64748B]">Upper/Lower</dt>
+            <dt className="text-xs text-ndt-muted">Upper/Lower</dt>
             <dd className="mt-0.5">
               {result.zona && result.zona.trim() ? (
                 <Badge tone="neutral" label={result.zona} />
               ) : (
-                <span className="text-sm text-[#64748B]">—</span>
+                <span className="text-sm text-ndt-muted">—</span>
               )}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-[#64748B]">Inspektur</dt>
+            <dt className="text-xs text-ndt-muted">Inspektur</dt>
             <dd className="mt-0.5 flex items-center gap-2">
               {inspector ? (
                 <>
                   <span
                     aria-hidden="true"
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E8F4FC] text-xs font-bold text-[#0072CE]"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ndt-primary-light text-xs font-bold text-ndt-primary"
                   >
                     {initials(inspector)}
                   </span>
-                  <span className="truncate text-sm font-semibold text-[#172033]">{inspector}</span>
+                  <span className="truncate text-sm font-semibold text-ndt-text">{inspector}</span>
                 </>
               ) : (
-                <span className="text-sm text-[#64748B]">—</span>
+                <span className="text-sm text-ndt-muted">—</span>
               )}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-[#64748B]">Tanggal Inspeksi</dt>
-            <dd className="mt-0.5 text-sm font-semibold text-[#172033]">{date}</dd>
-            {time && <dd className="text-xs text-[#64748B]">{time}</dd>}
+            <dt className="text-xs text-ndt-muted">Tanggal Inspeksi</dt>
+            <dd className="mt-0.5 text-sm font-semibold text-ndt-text">{date}</dd>
+            {time && <dd className="text-xs text-ndt-muted">{time}</dd>}
           </div>
         </dl>
       </section>
 
-      {/* 4. Dua kolom: gambar | evaluasi + perhitungan */}
+      {/* 4. Dua kolom: gambar | hasil evaluasi + perbandingan standar, lalu perhitungan selebar penuh */}
       <div className="grid items-start gap-6 xl:grid-cols-5">
         <section
           ref={drawingRef}
-          className="rounded-lg border border-[#E2E8F0] bg-white p-5 xl:col-span-3"
+          className="min-w-0 rounded-lg border border-ndt-border bg-white p-5 xl:col-span-3"
           aria-label="Gambar teknik"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-[15px] font-semibold text-[#172033]">Gambar Teknik</h2>
+            <h2 className="text-[15px] font-semibold text-ndt-text">Gambar Teknik</h2>
             <div className="flex flex-wrap items-center gap-2">
-              <label className="inline-flex cursor-pointer items-center gap-1.5 text-[13px] text-[#64748B]">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 text-[13px] text-ndt-muted">
                 <input
                   type="checkbox"
                   checked={showMarkers}
                   onChange={(e) => setShowMarkers(e.target.checked)}
-                  className="h-4 w-4 accent-[#0072CE]"
+                  className="h-4 w-4 accent-ndt-primary"
                 />
                 Tampilkan marker
               </label>
@@ -381,7 +384,7 @@ export default function DetailPage() {
                 type="button"
                 onClick={toggleFullscreen}
                 title={isFullscreen ? 'Keluar layar penuh' : 'Layar penuh'}
-                className="inline-flex items-center gap-1.5 rounded-md border border-[#E2E8F0] bg-white px-2.5 py-1 text-[13px] font-medium text-[#172033] hover:bg-[#E8F4FC]"
+                className="inline-flex items-center gap-1.5 rounded-md border border-ndt-border bg-white px-2.5 py-1 text-[13px] font-medium text-ndt-text hover:bg-ndt-primary-light"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M8 3H5a2 2 0 0 0-2 2v3" />
@@ -409,31 +412,31 @@ export default function DetailPage() {
                   />
                 </Suspense>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#64748B]" aria-label="Legenda gambar">
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ndt-muted" aria-label="Legenda gambar">
                 <span className="inline-flex items-center gap-1.5">
-                  <span aria-hidden="true" className="inline-block h-3 w-4 rounded-full border-2 border-[#DC2626] bg-[#DC2626]/25" />
+                  <span aria-hidden="true" className="inline-block h-3 w-4 rounded-full border-2 border-ndt-danger bg-ndt-danger/25" />
                   Marker indikasi
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span aria-hidden="true" className="inline-block h-3 w-4 rounded-full border-2 border-[#0072CE]" />
+                  <span aria-hidden="true" className="inline-block h-3 w-4 rounded-full border-2 border-ndt-primary" />
                   Terpilih
                 </span>
                 <span>Angka = nomor urut baris tabel</span>
               </div>
             </>
           ) : (
-            <p className="mt-2 text-sm text-[#64748B]">Gambar tidak tersedia.</p>
+            <p className="mt-2 text-sm text-ndt-muted">Gambar tidak tersedia.</p>
           )}
         </section>
 
-        <div className="space-y-6 xl:col-span-2">
-          <section className="rounded-lg border border-[#E2E8F0] bg-white p-5" aria-label="Hasil evaluasi">
-            <h2 className="text-[15px] font-semibold text-[#172033]">Hasil Evaluasi</h2>
+        <div className="min-w-0 space-y-6 xl:col-span-2">
+          <section className="rounded-lg border border-ndt-border bg-white p-5" aria-label="Hasil evaluasi">
+            <h2 className="text-[15px] font-semibold text-ndt-text">Hasil Evaluasi</h2>
             <div className="mt-3 space-y-3">
               {zoneCard('A', result.persen_unbond_zone_a, result.status_zone_a)}
               {zoneCard('C', result.persen_unbond_zone_c, result.status_zone_c)}
             </div>
-            <p className={`mt-3 flex items-start gap-1.5 text-[13px] font-medium ${ok ? 'text-[#16A34A]' : 'text-[#B45309]'}`}>
+            <p className={`mt-3 flex items-start gap-1.5 text-[13px] font-medium ${ok ? 'text-ndt-success' : 'text-ndt-warning-dark'}`}>
               <span aria-hidden="true">{ok ? '✓' : '⚠'}</span>
               {ok
                 ? 'Memenuhi kriteria penerimaan.'
@@ -442,52 +445,60 @@ export default function DetailPage() {
           </section>
 
           <CriteriaComparison result={result} />
+        </div>
+      </div>
 
-          <section className="rounded-lg border border-[#E2E8F0] bg-white p-5" aria-label="Perhitungan">
-            <h2 className="text-[15px] font-semibold text-[#172033]">Perhitungan</h2>
-            <h3 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-[#64748B]">Geometri</h3>
-            <dl className="divide-y divide-[#E2E8F0] text-sm">
+      <section className="rounded-lg border border-ndt-border bg-white p-5" aria-label="Perhitungan">
+        <h2 className="text-[15px] font-semibold text-ndt-text">Perhitungan</h2>
+        <div className="mt-3 grid gap-x-8 gap-y-4 md:grid-cols-3">
+          <div>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ndt-muted">Geometri</h3>
+            <dl className="divide-y divide-ndt-border text-sm">
               <div className="flex items-center justify-between gap-3 py-1.5">
-                <dt className="text-[#64748B]">Panjang (P)</dt>
-                <dd className="text-right font-medium tabular-nums text-[#172033]">{formatNumber(result.p_keliling)} mm</dd>
+                <dt className="text-ndt-muted">Panjang (P)</dt>
+                <dd className="text-right font-medium tabular-nums text-ndt-text">{formatNumber(result.p_keliling)} mm</dd>
               </div>
               <div className="flex items-center justify-between gap-3 py-1.5">
-                <dt className="text-[#64748B]">Luas Babbit total</dt>
-                <dd className="text-right font-medium tabular-nums text-[#172033]">{formatNumber(result.a_babbit)} mm²</dd>
-              </div>
-            </dl>
-            <h3 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-[#64748B]">Per Zona</h3>
-            <dl className="divide-y divide-[#E2E8F0] text-sm">
-              <div className="flex items-center justify-between gap-3 py-1.5">
-                <dt className="text-[#64748B]">Luas Zona A</dt>
-                <dd className="text-right font-medium tabular-nums text-[#172033]">{formatNumber(result.a_zone_a)} mm²</dd>
-              </div>
-              <div className="flex items-center justify-between gap-3 py-1.5">
-                <dt className="text-[#64748B]">Luas Zona C</dt>
-                <dd className="text-right font-medium tabular-nums text-[#172033]">{formatNumber(result.a_zone_c)} mm²</dd>
-              </div>
-              <div className="flex items-center justify-between gap-3 py-1.5">
-                <dt className="text-[#64748B]">Total Unbound Zona A</dt>
-                <dd className="text-right font-medium tabular-nums text-[#172033]">{formatNumber(result.a_unbond_zone_a)} mm²</dd>
-              </div>
-              <div className="flex items-center justify-between gap-3 py-1.5">
-                <dt className="text-[#64748B]">Total Unbound Zona C</dt>
-                <dd className="text-right font-medium tabular-nums text-[#172033]">{formatNumber(result.a_unbond_zone_c)} mm²</dd>
+                <dt className="text-ndt-muted">Luas Babbit total</dt>
+                <dd className="text-right font-medium tabular-nums text-ndt-text">{formatNumber(result.a_babbit)} mm²</dd>
               </div>
             </dl>
-            <h3 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-[#64748B]">Persentase</h3>
-            <dl className="divide-y divide-[#E2E8F0] text-sm">
+          </div>
+          <div>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ndt-muted">Per Zona</h3>
+            <dl className="divide-y divide-ndt-border text-sm">
+              <div className="flex items-center justify-between gap-3 py-1.5">
+                <dt className="text-ndt-muted">Luas Zona A</dt>
+                <dd className="text-right font-medium tabular-nums text-ndt-text">{formatNumber(result.a_zone_a)} mm²</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 py-1.5">
+                <dt className="text-ndt-muted">Luas Zona C</dt>
+                <dd className="text-right font-medium tabular-nums text-ndt-text">{formatNumber(result.a_zone_c)} mm²</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 py-1.5">
+                <dt className="text-ndt-muted">Total Unbond Zona A</dt>
+                <dd className="text-right font-medium tabular-nums text-ndt-text">{formatNumber(result.a_unbond_zone_a)} mm²</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 py-1.5">
+                <dt className="text-ndt-muted">Total Unbond Zona C</dt>
+                <dd className="text-right font-medium tabular-nums text-ndt-text">{formatNumber(result.a_unbond_zone_c)} mm²</dd>
+              </div>
+            </dl>
+          </div>
+          <div>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ndt-muted">Persentase</h3>
+            <dl className="divide-y divide-ndt-border text-sm">
               {(
                 [
-                  ['% Unbound Zona A', result.persen_unbond_zone_a, result.status_zone_a],
-                  ['% Unbound Zona C', result.persen_unbond_zone_c, result.status_zone_c],
+                  ['% Unbond Zona A', result.persen_unbond_zone_a, result.status_zone_a],
+                  ['% Unbond Zona C', result.persen_unbond_zone_c, result.status_zone_c],
                 ] as Array<[string, number | null, 'ACCEPT' | 'REJECT' | null]>
               ).map(([label, persen, status]) => (
                 <div key={label} className="flex items-center justify-between gap-3 py-1.5">
-                  <dt className="text-[#64748B]">{label}</dt>
+                  <dt className="text-ndt-muted">{label}</dt>
                   <dd
                     className={`text-right text-base font-bold tabular-nums ${
-                      status === 'REJECT' ? 'text-[#DC2626]' : status === 'ACCEPT' ? 'text-[#16A34A]' : 'text-[#172033]'
+                      status === 'REJECT' ? 'text-ndt-danger' : status === 'ACCEPT' ? 'text-ndt-success' : 'text-ndt-text'
                     }`}
                   >
                     {validNumber(persen) ? `${formatNumber(persen)} %` : '—'}
@@ -495,13 +506,13 @@ export default function DetailPage() {
                 </div>
               ))}
             </dl>
-          </section>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* 5. Detail indikasi */}
-      <section className="rounded-lg border border-[#E2E8F0] bg-white p-5" aria-label="Detail indikasi">
-        <h2 className="text-[15px] font-semibold text-[#172033]">Detail Indikasi</h2>
+      <section className="rounded-lg border border-ndt-border bg-white p-5" aria-label="Detail indikasi">
+        <h2 className="text-[15px] font-semibold text-ndt-text">Detail Indikasi</h2>
         <div className="mt-2">
           <IndicationTable
             items={indications}
@@ -528,7 +539,7 @@ export default function DetailPage() {
           <img
             src={buktiView.url}
             alt={`Foto bukti indikasi #${buktiView.nomor}`}
-            className="max-h-[60vh] w-full rounded-lg border border-[#E2E8F0] object-contain"
+            className="max-h-[60vh] w-full rounded-lg border border-ndt-border object-contain"
           />
         </Modal>
       )}

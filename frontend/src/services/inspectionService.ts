@@ -96,8 +96,10 @@ export const inspectionService = {
     return apiDownload(`/results/${resultId}/report/pdf`, `laporan_ndt_${resultId}.pdf`);
   },
 
-  downloadExcel(): Promise<void> {
-    return apiDownload('/results/export/excel', 'riwayat_hasil_ndt.xlsx');
+  /** resultIds diisi = export hanya baris tersebut (sesuai filter di halaman Riwayat). */
+  downloadExcel(resultIds?: number[]): Promise<void> {
+    const query = resultIds ? `?ids=${resultIds.join(',')}` : '';
+    return apiDownload(`/results/export/excel${query}`, 'riwayat_hasil_ndt.xlsx');
   },
 
   bulkDeleteResults(resultIds: number[]): Promise<{ deleted_components: number }> {

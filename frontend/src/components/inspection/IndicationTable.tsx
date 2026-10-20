@@ -22,13 +22,13 @@ interface Props {
  */
 export default function IndicationTable({ items, selectedId, onSelect, onEdit, hideActions = false, onViewBukti }: Props) {
   if (items.length === 0) {
-    return <p className="py-4 text-center text-sm text-[#64748B]">Belum ada indikasi.</p>;
+    return <p className="py-4 text-center text-sm text-ndt-muted">Belum ada indikasi.</p>;
   }
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-[13px]">
         <thead>
-          <tr className="border-b border-[#E2E8F0] text-[#64748B]">
+          <tr className="border-b border-ndt-border text-ndt-muted">
             <th className="py-2 pr-3 font-medium">No</th>
             <th className="py-2 pr-3 font-medium">Zona</th>
             <th className="py-2 pr-3 text-right font-medium">X</th>
@@ -46,13 +46,13 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit, h
             <tr
               key={ind.id}
               onClick={() => onSelect(ind.id)}
-              className={`cursor-pointer border-b border-[#E2E8F0] last:border-0 hover:bg-[#E8F4FC] ${
-                selectedId === ind.id ? 'bg-[#E8F4FC]' : ''
+              className={`cursor-pointer border-b border-ndt-border last:border-0 hover:bg-ndt-primary-light ${
+                selectedId === ind.id ? 'bg-ndt-primary-light' : ''
               }`}
             >
               <td className="py-2 pr-3">{String(i + 1).padStart(2, '0')}</td>
               <td className="py-2 pr-3">
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-[#E8F4FC] px-1 text-[11px] font-bold text-[#0072CE]">
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-ndt-primary-light px-1 text-[11px] font-bold text-ndt-primary">
                   {ind.zona}
                 </span>
               </td>
@@ -79,7 +79,7 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit, h
                         }}
                         title={`Lihat foto bukti indikasi #${i + 1}`}
                         aria-label={`Lihat foto bukti indikasi #${i + 1}`}
-                        className="rounded-md p-1.5 text-[#0072CE] hover:bg-[#E8F4FC]"
+                        className="rounded-md p-1.5 text-ndt-primary hover:bg-ndt-primary-light"
                       >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -96,7 +96,7 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit, h
                         }}
                         title={`Ubah indikasi #${i + 1}`}
                         aria-label={`Ubah indikasi #${i + 1}`}
-                        className="rounded-md p-1.5 text-[#0072CE] hover:bg-[#E8F4FC]"
+                        className="rounded-md p-1.5 text-ndt-primary hover:bg-ndt-primary-light"
                       >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />

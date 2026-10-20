@@ -3,29 +3,37 @@
 /*
  * NDT Inspection System — design tokens (spec §4-5).
  * Industrial + Technical + Clean. Desktop-first, tanpa gradient berlebihan.
+ * Warna didefinisikan sebagai theme Tailwind v4, dipakai lewat class seperti
+ * bg-ndt-primary, text-ndt-muted, border-ndt-border (bisa juga /opacity).
  */
+@theme {
+  --color-ndt-primary: #0072ce;
+  --color-ndt-primary-dark: #005b9a;
+  --color-ndt-primary-light: #e8f4fc;
+  --color-ndt-accent: #ffd100;
+  --color-ndt-bg: #f5f7fa;
+  --color-ndt-surface: #ffffff;
+  --color-ndt-border: #e2e8f0;
+  --color-ndt-text: #172033;
+  --color-ndt-text-soft: #475569;
+  --color-ndt-muted: #64748b;
+  --color-ndt-success: #16a34a;
+  --color-ndt-danger: #dc2626;
+  --color-ndt-danger-dark: #b91c1c;
+  --color-ndt-warning: #f59e0b;
+  --color-ndt-warning-dark: #b45309;
+  --color-ndt-info: #0284c7;
+}
+
 :root {
-  --ndt-primary: #0072ce;
-  --ndt-primary-dark: #005b9a;
-  --ndt-primary-light: #e8f4fc;
-  --ndt-accent: #ffd100;
-  --ndt-background: #f5f7fa;
-  --ndt-surface: #ffffff;
-  --ndt-border: #e2e8f0;
-  --ndt-text: #172033;
-  --ndt-text-secondary: #64748b;
-  --ndt-success: #16a34a;
-  --ndt-danger: #dc2626;
-  --ndt-warning: #f59e0b;
-  --ndt-info: #0284c7;
   --ndt-radius: 8px;
   --ndt-shadow-sm: 0 1px 2px rgba(23, 32, 51, 0.04);
 }
 
 html,
 body {
-  background: var(--ndt-background);
-  color: var(--ndt-text);
+  background: var(--color-ndt-bg);
+  color: var(--color-ndt-text);
   font-family:
     "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 14px;
@@ -33,7 +41,7 @@ body {
 
 /* Fokus keyboard yang terlihat (aksesibilitas, spec §28) */
 :focus-visible {
-  outline: 2px solid var(--ndt-primary);
+  outline: 2px solid var(--color-ndt-primary);
   outline-offset: 2px;
 }
 

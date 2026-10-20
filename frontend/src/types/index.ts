@@ -5,7 +5,7 @@
  * Backend: backend/api/main.py, backend/core/models.py, backend/db/database.py
  *
  * Catatan audit:
- * - % Unbound dan status SELALU berasal dari POST /components/{id}/calculate.
+ * - % Unbond dan status SELALU berasal dari POST /components/{id}/calculate.
  * - Status backend = "ACCEPT" | "REJECT" (bukan "ACC").
  * - Perhitungan dilakukan TERPISAH untuk Zone A dan Zone C (DOD-STD-2183 SH).
  */
@@ -113,6 +113,8 @@ export interface ResultRow extends EvaluationResult {
   diameter_mm: number;
   zona: string;
   inspector: string | null;
+  /** Waktu komponen dibuat (UTC dari SQLite). */
+  tanggal_input: string | null;
 }
 
 export type UserRole = 'admin' | 'staff';

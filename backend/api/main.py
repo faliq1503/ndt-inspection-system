@@ -419,8 +419,15 @@ def bulk_delete_results(data: BulkDeleteIn, _: dict = Depends(get_current_user))
     }
 
 @app.get("/results/export/excel")
-def export_excel(user: dict = Depends(get_current_user)):
+def export_excel(ids: Optional[str] = None, user: dict = Depends(get_current_user)):
+    """ids (opsional): daftar ID hasil dipisah koma, mis. "54,53,50" untuk export sesuai filter di halaman Riwayat."""
     data = ambil_semua_hasil()
+    if ids is not None:
+        try:
+            dipilih = {int(x) for x in ids.split(",") if x.strip()}
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Parameter ids tidak valid")
+        data = [row for row in data if row["id"] in dipilih]
     path = generate_excel_riwayat(data, dicetak_oleh=user["username"])
     return FileResponse(
         path,
