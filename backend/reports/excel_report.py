@@ -160,13 +160,14 @@ def _tulis_tabel(ws, data: list) -> int:
     return r
 
 
-def _tulis_footer(ws, baris_awal: int):
-    """Kolom tanda tangan: D:F, H:J, L:N (sesuai format PLN)."""
-    tengah = Alignment(horizontal="center", vertical="center")
-    for idx, (judul, jabatan, nama) in enumerate(TANDA_TANGAN):
-        kolom_awal = 4 + idx * 4
-        kolom_akhir = kolom_awal + 2
+# Posisi kotak tanda tangan (kolom awal, kolom akhir): kiri A:D, tengah G:J, kanan M:P
+KOLOM_TANDA_TANGAN = [(1, 4), (7, 10), (13, 16)]
 
+
+def _tulis_footer(ws, baris_awal: int):
+    """Kolom tanda tangan PREPARED / CHECKED / APPROVED (sesuai format PLN)."""
+    tengah = Alignment(horizontal="center", vertical="center")
+    for (judul, jabatan, nama), (kolom_awal, kolom_akhir) in zip(TANDA_TANGAN, KOLOM_TANDA_TANGAN):
         # Baris 1: judul, baris 2: jabatan, baris 3-6: ruang tanda tangan, baris 7-8: nama
         bagian = [
             (baris_awal, baris_awal, judul),
@@ -176,9 +177,9 @@ def _tulis_footer(ws, baris_awal: int):
         ]
         for r_awal, r_akhir, teks in bagian:
             ws.merge_cells(start_row=r_awal, start_column=kolom_awal, end_row=r_akhir, end_column=kolom_akhir)
-            cell = ws.cell(row=r_awal, column=kolom_awal, value=teks)
+            cell = ws.cell(row=r_awal, column=kolom_awal, value=teks or None)
             cell.alignment = tengah
-            if teks == nama:
+            if r_awal == baris_awal + 6 and nama:
                 cell.font = Font(bold=True, underline="single")
 
         # Judul + jabatan satu kotak, ruang tanda tangan satu kotak, nama satu kotak

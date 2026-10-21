@@ -23,11 +23,12 @@ NAMA_SISTEM = "NDT Inspection System"
 STANDAR_ACUAN = "DOD-STD-2183 (SH)"
 PELAKSANA = "Workshop PLN Pusharlis"
 
-# (judul, jabatan, nama) untuk tiap kolom tanda tangan di footer
+# (judul, jabatan, nama) untuk tiap kolom tanda tangan di footer, urut kiri -> kanan.
+# String kosong = dibiarkan kosong untuk diisi tangan.
 TANDA_TANGAN = [
+    ("PREPARED BY", "STAFF QUALITY CONTROL", ""),
     ("CHECKED BY", "TL QUALITY CONTROL", "BAGUS SANJAYA PUTRA"),
-    ("CHECKED BY", "TL QUALITY CONTROL", "BAGUS SANJAYA PUTRA"),
-    ("CHECKED BY", "TL QUALITY CONTROL", "BAGUS SANJAYA PUTRA"),
+    ("APPROVED BY", "", ""),
 ]
 
 NAMA_BULAN = [

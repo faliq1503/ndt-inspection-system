@@ -394,7 +394,7 @@ def _blok_indikasi(indikasi_list, styles):
 
 
 def _blok_tanda_tangan(styles):
-    """Kolom tanda tangan, sama dengan footer Excel (CHECKED BY / jabatan / nama)."""
+    """Kolom tanda tangan, sama dengan footer Excel (PREPARED / CHECKED / APPROVED BY)."""
     jarak = 8 * mm
     lebar_kotak = (LEBAR_ISI - 2 * jarak) / 3
     baris = [[], [], [], []]
@@ -405,7 +405,7 @@ def _blok_tanda_tangan(styles):
         baris[0].append(Paragraph(judul, styles["ttd"]))
         baris[1].append(Paragraph(jabatan, styles["ttd"]))
         baris[2].append("")
-        baris[3].append(Paragraph(f"<u><b>{nama}</b></u>", styles["ttd"]))
+        baris[3].append(Paragraph(f"<u><b>{nama}</b></u>", styles["ttd"]) if nama else "")
 
     lebar = []
     for i in range(len(TANDA_TANGAN)):
