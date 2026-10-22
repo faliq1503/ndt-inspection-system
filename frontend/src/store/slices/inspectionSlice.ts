@@ -8,6 +8,7 @@ import type { EvaluationResult } from '../../types/index';
  */
 
 interface InspectionForm {
+  unitAsal: string;
   jenisBenda: string;
   diameterMm: string;
   panjangLMm: string;
@@ -29,6 +30,7 @@ interface InspectionState {
 
 const initialState: InspectionState = {
   form: {
+    unitAsal: '',
     jenisBenda: '',
     diameterMm: '',
     panjangLMm: '',

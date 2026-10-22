@@ -61,6 +61,7 @@ def init_db():
             lebar_mm REAL NOT NULL,
             posisi_x REAL,
             posisi_y REAL,
+            bukti_path TEXT,
             FOREIGN KEY (component_id) REFERENCES component (id)
         )
     """)
@@ -94,6 +95,7 @@ def init_db():
         ("component", "lebar_zona_a_mm", "REAL"),
         ("component", "panjang_p_mm", "REAL"),
         ("indication", "zona", "TEXT NOT NULL DEFAULT 'C'"),
+        ("indication", "bukti_path", "TEXT"),
         ("standard", "lebar_zona_a_mm", "REAL NOT NULL DEFAULT 25"),
         ("standard", "individu_zona_a_mm", "REAL NOT NULL DEFAULT 12.5"),
         ("standard", "individu_zona_c_persen", "REAL NOT NULL DEFAULT 3.0"),
@@ -106,6 +108,16 @@ def init_db():
         ("evaluation_result", "a_bond_zone_c", "REAL"),
         ("evaluation_result", "persen_unbond_zone_c", "REAL"),
         ("evaluation_result", "status_zone_c", "TEXT"),
+        ("evaluation_result", "toleransi_persen", "REAL"),
+        ("evaluation_result", "status_persen_zone_a", "TEXT"),
+        ("evaluation_result", "dimensi_terbesar_zone_a", "REAL"),
+        ("evaluation_result", "batas_dimensi_zone_a", "REAL"),
+        ("evaluation_result", "status_dimensi_zone_a", "TEXT"),
+        ("evaluation_result", "status_persen_zone_c", "TEXT"),
+        ("evaluation_result", "luas_terbesar_zone_c", "REAL"),
+        ("evaluation_result", "batas_luas_zone_c", "REAL"),
+        ("evaluation_result", "status_luas_zone_c", "TEXT"),
+        ("component", "unit_asal", "TEXT"),
     ]
     for table, kolom, tipe in migrasi_kolom:
         try:
@@ -204,12 +216,12 @@ def hapus_standard(standard_id: int):
 # Fungsi dasar untuk Component + Indication
 # ---------------------------------------------------------------------
 
-def tambah_component(jenis_benda: str, diameter_mm: float, panjang_l_mm: float, zona: str, standard_id: int, inspector: str = None, lebar_zona_a_mm: float = None, panjang_p_mm: float = None) -> int:
+def tambah_component(jenis_benda: str, diameter_mm: float, panjang_l_mm: float, zona: str, standard_id: int, inspector: str = None, lebar_zona_a_mm: float = None, panjang_p_mm: float = None, unit_asal: str = None) -> int:
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO component (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id, inspector, lebar_zona_a_mm, panjang_p_mm) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id, inspector, lebar_zona_a_mm, panjang_p_mm),
+        "INSERT INTO component (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id, inspector, lebar_zona_a_mm, panjang_p_mm, unit_asal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (jenis_benda, diameter_mm, panjang_l_mm, zona, standard_id, inspector, lebar_zona_a_mm, panjang_p_mm, unit_asal),
     )
     conn.commit()
     new_id = cur.lastrowid
@@ -293,6 +305,23 @@ def update_ukuran_indikasi(indication_id: int, zona: str, panjang_mm: float, leb
     conn.close()
 
 
+def ambil_indikasi_by_id(indication_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM indication WHERE id = ?", (indication_id,))
+    row = cur.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def simpan_bukti_path(indication_id: int, bukti_path: str):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE indication SET bukti_path = ? WHERE id = ?", (bukti_path, indication_id))
+    conn.commit()
+    conn.close()
+
+
 # ---------------------------------------------------------------------
 # Fungsi dasar untuk Evaluation Result
 # ---------------------------------------------------------------------
@@ -305,14 +334,20 @@ def simpan_evaluation_result(hasil: dict) -> int:
         (component_id, p_keliling, a_babbit, a_zone_c, a_zone_a,
          a_unbond_zone_a, a_bond_zone_a, persen_unbond_zone_a, status_zone_a,
          a_unbond_zone_c, a_bond_zone_c, persen_unbond_zone_c, status_zone_c,
-         status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         status,
+         toleransi_persen, status_persen_zone_a, dimensi_terbesar_zone_a,
+         batas_dimensi_zone_a, status_dimensi_zone_a, status_persen_zone_c,
+         luas_terbesar_zone_c, batas_luas_zone_c, status_luas_zone_c)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         hasil["component_id"], hasil["p_keliling"], hasil["a_babbit"],
         hasil["a_zone_c"], hasil["a_zone_a"],
         hasil["a_unbond_zone_a"], hasil["a_bond_zone_a"], hasil["persen_unbond_zone_a"], hasil["status_zone_a"],
         hasil["a_unbond_zone_c"], hasil["a_bond_zone_c"], hasil["persen_unbond_zone_c"], hasil["status_zone_c"],
         hasil["status"],
+        hasil["toleransi_persen"], hasil["status_persen_zone_a"], hasil["dimensi_terbesar_zone_a"],
+        hasil["batas_dimensi_zone_a"], hasil["status_dimensi_zone_a"], hasil["status_persen_zone_c"],
+        hasil["luas_terbesar_zone_c"], hasil["batas_luas_zone_c"], hasil["status_luas_zone_c"],
     ))
     conn.commit()
     new_id = cur.lastrowid
@@ -324,7 +359,7 @@ def ambil_semua_hasil():
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector
+        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.unit_asal, c.tanggal_input
         FROM evaluation_result er
         JOIN component c ON er.component_id = c.id
         ORDER BY er.id DESC
@@ -397,9 +432,11 @@ def ambil_hasil_by_id(result_id: int):
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.id as comp_id
+        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.id as comp_id,
+               c.unit_asal, c.tanggal_input, s.nama_standard
         FROM evaluation_result er
         JOIN component c ON er.component_id = c.id
+        LEFT JOIN standard s ON c.standard_id = s.id
         WHERE er.id = ?
     """, (result_id,))
     row = cur.fetchone()

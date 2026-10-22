@@ -47,12 +47,15 @@ def evaluasi_komponen(
 
     # --- Evaluasi Zone C ---
     batas_luas_zone_c = min(
-        standard.individu_zona_c_persen / 100 * hasil["a_babbit"],
+        standard.individu_zona_c_persen / 100 * hasil["a_zone_c"],
         standard.individu_zona_c_max_mm2,
     )
     zone_c_persen_ok = hasil["persen_unbond_zone_c"] <= standard.toleransi_persen
     zone_c_luas_ok = hasil["luas_terbesar_zone_c"] <= batas_luas_zone_c
     status_zone_c = "ACCEPT" if (zone_c_persen_ok and zone_c_luas_ok) else "REJECT"
+
+    def _s(ok: bool) -> str:
+        return "ACCEPT" if ok else "REJECT"
 
     # --- Status akhir ---
     status = "ACCEPT" if (status_zone_a == "ACCEPT" and status_zone_c == "ACCEPT") else "REJECT"
@@ -75,6 +78,16 @@ def evaluasi_komponen(
         status_zone_c=status_zone_c,
 
         status=status,
+
+        toleransi_persen=standard.toleransi_persen,
+        status_persen_zone_a=_s(zone_a_persen_ok),
+        dimensi_terbesar_zone_a=hasil["dimensi_terbesar_zone_a"],
+        batas_dimensi_zone_a=standard.individu_zona_a_mm,
+        status_dimensi_zone_a=_s(zone_a_dimensi_ok),
+        status_persen_zone_c=_s(zone_c_persen_ok),
+        luas_terbesar_zone_c=hasil["luas_terbesar_zone_c"],
+        batas_luas_zone_c=round(batas_luas_zone_c, 2),
+        status_luas_zone_c=_s(zone_c_luas_ok),
     )
 
 

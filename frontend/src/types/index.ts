@@ -5,7 +5,7 @@
  * Backend: backend/api/main.py, backend/core/models.py, backend/db/database.py
  *
  * Catatan audit:
- * - % Unbound dan status SELALU berasal dari POST /components/{id}/calculate.
+ * - % Unbond dan status SELALU berasal dari POST /components/{id}/calculate.
  * - Status backend = "ACCEPT" | "REJECT" (bukan "ACC").
  * - Perhitungan dilakukan TERPISAH untuk Zone A dan Zone C (DOD-STD-2183 SH).
  */
@@ -27,6 +27,7 @@ export interface Standard {
 
 /** backend: ComponentIn (POST /components) */
 export interface ComponentCreate {
+  unit_asal: string;
   jenis_benda: string;
   diameter_mm: number;
   panjang_l_mm: number;
@@ -46,6 +47,8 @@ export interface Indication {
   /** posisi dalam persen 0-100 relatif terhadap gambar tampil */
   posisi_x: number | null;
   posisi_y: number | null;
+  /** foto bukti pengukuran langsung (nama file di /images), null bila belum ada */
+  bukti_path: string | null;
   /** dihitung backend, null sebelum pernah di-calculate (lihat GET /components/:id) */
   a_bond_individual: number | null;
   persen_individual: number | null;
@@ -54,6 +57,7 @@ export interface Indication {
 /** backend: GET /components/{id} -> component + indikasi_list */
 export interface ComponentDetail {
   id: number;
+  unit_asal: string | null;
   jenis_benda: string;
   diameter_mm: number;
   panjang_l_mm: number;
@@ -63,6 +67,8 @@ export interface ComponentDetail {
   gambar_path: string | null;
   inspector: string | null;
   indikasi_list: Indication[];
+  lebar_zona_a_mm: number | null;
+  panjang_p_mm: number | null;
 }
 
 /**
@@ -84,6 +90,16 @@ export interface EvaluationResult {
   persen_unbond_zone_c: number;
   status_zone_c: EvaluationStatus;
   status: EvaluationStatus;
+  // Perbandingan batas standar (null untuk hasil lama)
+  toleransi_persen?: number | null;
+  status_persen_zone_a?: EvaluationStatus | null;
+  dimensi_terbesar_zone_a?: number | null;
+  batas_dimensi_zone_a?: number | null;
+  status_dimensi_zone_a?: EvaluationStatus | null;
+  status_persen_zone_c?: EvaluationStatus | null;
+  luas_terbesar_zone_c?: number | null;
+  batas_luas_zone_c?: number | null;
+  status_luas_zone_c?: EvaluationStatus | null;
 }
 
 /**
@@ -92,10 +108,13 @@ export interface EvaluationResult {
  */
 export interface ResultRow extends EvaluationResult {
   id: number;
+  unit_asal: string | null;
   jenis_benda: string;
   diameter_mm: number;
   zona: string;
   inspector: string | null;
+  /** Waktu komponen dibuat (UTC dari SQLite). */
+  tanggal_input: string | null;
 }
 
 export type UserRole = 'admin' | 'staff';

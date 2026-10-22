@@ -46,6 +46,8 @@ from db.database import (
     simpan_gambar_path,
     update_posisi_indikasi,
     update_ukuran_indikasi,
+    ambil_indikasi_by_id,
+    simpan_bukti_path,
 )
 from reports.pdf_report import generate_pdf_report
 from reports.excel_report import generate_excel_riwayat
@@ -106,6 +108,7 @@ class ComponentIn(BaseModel):
     standard_id: int
     lebar_zona_a_mm: Optional[float] = None
     panjang_p_mm: Optional[float] = None
+    unit_asal: Optional[str] = None
 
 
 class IndikasiIn(BaseModel):
@@ -180,6 +183,9 @@ def edit_standard(standard_id: int, data: StandardIn, _: dict = Depends(require_
 
 @app.post("/components")
 def create_component(data: ComponentIn, user: dict = Depends(get_current_user)):
+    unit_asal = (data.unit_asal or "").strip()
+    if not unit_asal:
+        raise HTTPException(status_code=422, detail="Unit asal barang wajib diisi.")
     component_id = tambah_component(
         jenis_benda=data.jenis_benda,
         diameter_mm=data.diameter_mm,
@@ -189,6 +195,7 @@ def create_component(data: ComponentIn, user: dict = Depends(get_current_user)):
         inspector=user["username"],
         lebar_zona_a_mm=data.lebar_zona_a_mm,
         panjang_p_mm=data.panjang_p_mm,
+        unit_asal=unit_asal,
     )
     return {"id": component_id, "inspector": user["username"], **data.dict()}
 
@@ -271,6 +278,23 @@ def set_indication_size(indication_id: int, data: IndikasiUpdateIn):
     return {"id": indication_id, **data.dict()}
 
 
+@app.post("/indications/{indication_id}/upload-bukti")
+def upload_bukti(indication_id: int, file: UploadFile = File(...)):
+    ind = ambil_indikasi_by_id(indication_id)
+    if ind is None:
+        raise HTTPException(status_code=404, detail="Indikasi tidak ditemukan")
+
+    ext = os.path.splitext(file.filename)[1] or ".jpg"
+    filename = f"evidence_{indication_id}_{uuid.uuid4().hex[:8]}{ext}"
+    dest_path = os.path.join(IMAGES_DIR, filename)
+
+    with open(dest_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    simpan_bukti_path(indication_id, filename)
+    return {"bukti_path": filename, "url": f"/images/{filename}"}
+
+
 # ---------------------------------------------------------------------
 # Endpoint: Hitung & Evaluasi
 # ---------------------------------------------------------------------
@@ -325,6 +349,15 @@ def calculate(component_id: int):
         "persen_unbond_zone_c": hasil.persen_unbond_zone_c,
         "status_zone_c": hasil.status_zone_c,
         "status": hasil.status,
+        "toleransi_persen": hasil.toleransi_persen,
+        "status_persen_zone_a": hasil.status_persen_zone_a,
+        "dimensi_terbesar_zone_a": hasil.dimensi_terbesar_zone_a,
+        "batas_dimensi_zone_a": hasil.batas_dimensi_zone_a,
+        "status_dimensi_zone_a": hasil.status_dimensi_zone_a,
+        "status_persen_zone_c": hasil.status_persen_zone_c,
+        "luas_terbesar_zone_c": hasil.luas_terbesar_zone_c,
+        "batas_luas_zone_c": hasil.batas_luas_zone_c,
+        "status_luas_zone_c": hasil.status_luas_zone_c,
     })
 
     return hasil
@@ -340,13 +373,16 @@ def get_results():
 
 
 @app.get("/results/{result_id}/report/pdf")
-def export_pdf(result_id: int):
+def export_pdf(result_id: int, user: dict = Depends(get_current_user)):
     hasil = ambil_hasil_by_id(result_id)
     if hasil is None:
         raise HTTPException(status_code=404, detail="Hasil tidak ditemukan")
 
     indikasi_list = ambil_indikasi_by_component(hasil["comp_id"])
-    path = generate_pdf_report(result_id, hasil, indikasi_list)
+    comp = ambil_component_by_id(hasil["comp_id"])
+    gambar = comp["gambar_path"] if comp else None
+    path = generate_pdf_report(result_id, hasil, indikasi_list, gambar_filename=gambar,
+                               dicetak_oleh=user["username"])
 
     return FileResponse(path, media_type="application/pdf", filename=f"laporan_ndt_{result_id}.pdf")
 
@@ -383,9 +419,16 @@ def bulk_delete_results(data: BulkDeleteIn, _: dict = Depends(get_current_user))
     }
 
 @app.get("/results/export/excel")
-def export_excel():
+def export_excel(ids: Optional[str] = None, user: dict = Depends(get_current_user)):
+    """ids (opsional): daftar ID hasil dipisah koma, mis. "54,53,50" untuk export sesuai filter di halaman Riwayat."""
     data = ambil_semua_hasil()
-    path = generate_excel_riwayat(data)
+    if ids is not None:
+        try:
+            dipilih = {int(x) for x in ids.split(",") if x.strip()}
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Parameter ids tidak valid")
+        data = [row for row in data if row["id"] in dipilih]
+    path = generate_excel_riwayat(data, dicetak_oleh=user["username"])
     return FileResponse(
         path,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

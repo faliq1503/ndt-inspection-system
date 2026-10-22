@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'danger';
+type Variant = 'primary' | 'secondary' | 'danger' | 'destructive';
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -9,9 +9,11 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const STYLES: Record<Variant, string> = {
-  primary: 'bg-[#0072CE] text-white hover:bg-[#005B9A] disabled:bg-[#0072CE]/50',
-  secondary: 'border border-[#E2E8F0] bg-white text-[#172033] hover:bg-[#F5F7FA]',
-  danger: 'bg-[#DC2626] text-white hover:bg-[#DC2626]/90',
+  primary: 'bg-ndt-primary text-white hover:bg-ndt-primary-dark disabled:bg-ndt-primary/50',
+  secondary: 'border border-ndt-border bg-white text-ndt-text hover:bg-ndt-primary-light disabled:opacity-50',
+  danger: 'bg-ndt-danger text-white hover:bg-ndt-danger/90',
+  destructive:
+    'border border-ndt-danger/50 bg-white text-ndt-danger hover:bg-ndt-danger/10 disabled:opacity-50',
 };
 
 export default function Button({ variant = 'primary', loading = false, loadingText = 'Memuat...', children, ...rest }: Props) {
@@ -19,7 +21,7 @@ export default function Button({ variant = 'primary', loading = false, loadingTe
     <button
       {...rest}
       disabled={rest.disabled ?? loading}
-      className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${STYLES[variant]} ${rest.className ?? ''}`}
+      className={`inline-flex min-h-[36px] items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${STYLES[variant]} ${rest.className ?? ''}`}
     >
       {loading ? (
         <>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Ellipse, Group, Image as KonvaImage, Layer, Rect, Stage, Text } from 'react-konva';
 import type Konva from 'konva';
 import type { Indication } from '../../types/index';
@@ -30,6 +31,14 @@ interface MappingCanvasProps {
   onCanvasClick: (pos: CanvasPercent) => void;
   /** Sinyal dari tabel: center-kan marker ber-id ini (nonce berubah tiap request). */
   focusRequest: { id: number; nonce: number } | null;
+  /** Mode baca-saja (mis. halaman detail): klik drawing tidak menambah indikasi. */
+  readOnly?: boolean;
+  /** Tampilkan marker indikasi. Default true. */
+  showMarkers?: boolean;
+  /** Kontrol tambahan (mis. tombol Ganti Gambar) yang digabung ke toolbar. */
+  toolbarExtra?: ReactNode;
+  /** Tampilkan teks petunjuk di toolbar. Default true. */
+  showHint?: boolean;
 }
 
 const MIN_ZOOM = 0.5;
@@ -85,6 +94,10 @@ export default function MappingCanvas({
   onSelect,
   onCanvasClick,
   focusRequest,
+  readOnly = false,
+  toolbarExtra,
+  showHint = true,
+  showMarkers = true,
 }: MappingCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -189,34 +202,58 @@ export default function MappingCanvas({
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-2" role="toolbar" aria-label="Toolbar kanvas">
+        {toolbarExtra}
+        {toolbarExtra && (
+          <span aria-hidden="true" className="h-5 w-px bg-ndt-border" />
+        )}
         <button
           type="button"
           onClick={() => zoomAtCenter(1.25)}
-          className="rounded-md border border-[#E2E8F0] px-2.5 py-1 text-sm font-medium hover:bg-[#F5F7FA]"
+          title="Perbesar"
+          className="inline-flex items-center gap-1.5 rounded-md border border-ndt-border bg-white px-2.5 py-1 text-sm font-medium text-ndt-text hover:bg-ndt-primary-light"
         >
-          Perbesar +
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.5" y2="16.5" />
+            <line x1="11" y1="8" x2="11" y2="14" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+          </svg>
+          Perbesar
         </button>
         <button
           type="button"
           onClick={() => zoomAtCenter(1 / 1.25)}
-          className="rounded-md border border-[#E2E8F0] px-2.5 py-1 text-sm font-medium hover:bg-[#F5F7FA]"
+          title="Perkecil"
+          className="inline-flex items-center gap-1.5 rounded-md border border-ndt-border bg-white px-2.5 py-1 text-sm font-medium text-ndt-text hover:bg-ndt-primary-light"
         >
-          Perkecil −
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.5" y2="16.5" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+          </svg>
+          Perkecil
         </button>
         <button
           type="button"
           onClick={resetView}
-          className="rounded-md border border-[#E2E8F0] px-2.5 py-1 text-sm font-medium hover:bg-[#F5F7FA]"
+          title="Atur ulang tampilan"
+          className="inline-flex items-center gap-1.5 rounded-md border border-ndt-border bg-white px-2.5 py-1 text-sm font-medium text-ndt-text hover:bg-ndt-primary-light"
         >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
           Atur Ulang
         </button>
-        <span className="text-xs text-[#64748B]">{Math.round(zoom * 100)}% · geser untuk pan · klik gambar untuk Tambah Indikasi</span>
+        {showHint && (
+          <span className="text-xs text-ndt-muted">{Math.round(zoom * 100)}% · geser untuk pan{readOnly ? '' : ' · klik gambar untuk Tambah Indikasi'}</span>
+        )}
       </div>
 
       <div
         ref={wrapRef}
-        className="overflow-hidden rounded-md border border-[#E2E8F0] bg-[#F5F7FA]"
-        style={{ cursor: 'crosshair' }}
+        className="overflow-hidden rounded-md border border-ndt-border bg-ndt-bg"
+        style={{ cursor: readOnly ? 'grab' : 'crosshair' }}
       >
         <Stage
           ref={stageRef}
@@ -251,7 +288,7 @@ export default function MappingCanvas({
           }}
           onMouseUp={() => {
             const st = panRef.current;
-            if (st.active && !st.panning && st.onImage) {
+            if (st.active && !st.panning && st.onImage && !readOnly) {
               const stage = stageRef.current;
               const p = stage?.getPointerPosition();
               if (p) onCanvasClick(toPercent(p.x, p.y));
@@ -268,6 +305,7 @@ export default function MappingCanvas({
             <Group x={pos.x} y={pos.y} scaleX={k} scaleY={k}>
               {img && <KonvaImage ref={imageNodeRef} image={img} width={natW} height={natH} />}
               {img &&
+                showMarkers &&
                 indications.map((ind, i) => {
                   if (ind.posisi_x === null || ind.posisi_y === null) return null;
                   const cx = (ind.posisi_x / 100) * natW;

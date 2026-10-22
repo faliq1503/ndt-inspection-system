@@ -93,11 +93,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#F5F7FA] min-[900px]:flex-row">
+    <div className="flex min-h-dvh flex-col bg-ndt-bg min-[900px]:flex-row">
       {/* ── Header mobile (<900px) ──
           Tinggi mengikuti layar (clamp), konten dipusatkan di area biru yang terlihat:
           pb-16 = ruang yang nanti ditimpa kartu (-mt-10) + jarak napas 24px. */}
-      <header className="relative flex min-h-[clamp(220px,28dvh,300px)] items-center justify-center overflow-hidden rounded-b-[28px] bg-[#0072CE] px-5 pb-16 pt-[max(1.75rem,env(safe-area-inset-top))] text-center text-white min-[900px]:hidden">
+      <header className="relative flex min-h-[clamp(220px,28dvh,300px)] items-center justify-center overflow-hidden rounded-b-[28px] bg-ndt-primary px-5 pb-16 pt-[max(1.75rem,env(safe-area-inset-top))] text-center text-white min-[900px]:hidden">
         <div aria-hidden="true" className="absolute inset-0" style={GRID_BG_SOFT} />
         <div className="relative">
           <img
@@ -108,13 +108,13 @@ export default function LoginPage() {
           <h1 className="mt-3.5 text-[22px] font-bold leading-tight tracking-tight">
             NDT Inspection System
           </h1>
-          <span aria-hidden="true" className="mx-auto mt-2.5 block h-1 w-12 rounded-full bg-[#FFD100]" />
+          <span aria-hidden="true" className="mx-auto mt-2.5 block h-1 w-12 rounded-full bg-ndt-accent" />
         </div>
       </header>
 
       {/* ── Panel branding desktop (≥900px) ── */}
       <aside
-        className="relative hidden items-center justify-center overflow-hidden bg-[#0072CE] text-white min-[900px]:flex min-[900px]:w-[38%] min-[900px]:px-6 lg:w-[42%]"
+        className="relative hidden items-center justify-center overflow-hidden bg-ndt-primary text-white min-[900px]:flex min-[900px]:w-[38%] min-[900px]:px-6 lg:w-[42%]"
         aria-label="Branding NDT Inspection System"
       >
         {/* Background foto + overlay biru brand agar teks tetap jelas */}
@@ -124,10 +124,10 @@ export default function LoginPage() {
           aria-hidden="true"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div aria-hidden="true" className="absolute inset-0 bg-[#0072CE]/85" />
+        <div aria-hidden="true" className="absolute inset-0 bg-ndt-primary/85" />
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#005B9A]/70 to-transparent"
+          className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ndt-primary-dark/70 to-transparent"
         />
         <div className="relative w-full max-w-[400px] py-12">
           <img
@@ -135,29 +135,29 @@ export default function LoginPage() {
             alt="PLN Pusharlis"
             className="h-20 w-auto rounded-xl bg-white px-5 py-3"
           />
-          <span aria-hidden="true" className="mb-4 mt-8 block h-1 w-12 rounded-full bg-[#FFD100]" />
+          <span aria-hidden="true" className="mb-4 mt-8 block h-1 w-12 rounded-full bg-ndt-accent" />
           <h1 className="text-[28px] font-bold leading-tight">NDT Inspection System</h1>
           <p className="mt-3 max-w-[38ch] text-[14px] leading-[1.6] text-white">
             Digitalisasi inspeksi Non-Destructive Testing: mapping indikasi 2D, perhitungan
-            % Unbound, dan evaluasi Kriteria Penerimaan.
+            % Unbond, dan evaluasi Kriteria Penerimaan.
           </p>
           <p className="mt-6 text-[13px] tracking-wide text-white/85">
-            Mapping &middot; % Unbound &middot; Kriteria Penerimaan
+            Mapping &middot; % Unbond &middot; Kriteria Penerimaan
           </p>
         </div>
       </aside>
 
       {/* ── Sisi kanan: main + footer dibungkus satu kolom (footer tidak lagi jadi kolom sendiri di desktop) ── */}
-      <div className="flex min-w-0 flex-1 flex-col bg-gradient-to-b from-[#F5F7FA] to-[#E6EFF9] min-[900px]:bg-none">
+      <div className="flex min-w-0 flex-1 flex-col bg-gradient-to-b from-ndt-bg to-[#E6EFF9] min-[900px]:bg-none">
         <main className="flex flex-1 flex-col items-center px-4 pb-4 min-[900px]:justify-center min-[900px]:px-5 min-[900px]:py-10">
           {/* Kartu menimpa header di mobile (-mt-10), normal di desktop */}
           <div className="relative z-10 -mt-10 w-full max-w-[480px] min-[900px]:mt-0">
             <form
               onSubmit={handleSubmit}
-              className="animate-login-rise rounded-[22px] border border-[#E2E8F0]/70 bg-white p-6 shadow-[0_16px_44px_rgba(23,32,51,0.12)] min-[900px]:rounded-2xl min-[900px]:p-10 min-[900px]:shadow-[0_10px_36px_rgba(23,32,51,0.07)]"
+              className="animate-login-rise rounded-[22px] border border-ndt-border/70 bg-white p-6 shadow-[0_16px_44px_rgba(23,32,51,0.12)] min-[900px]:rounded-2xl min-[900px]:p-10 min-[900px]:shadow-[0_10px_36px_rgba(23,32,51,0.07)]"
             >
-              <h2 className="text-[28px] font-bold leading-tight text-[#172033]">Masuk</h2>
-              <p className="mb-6 mt-1.5 text-[15px] text-[#475569]">Masuk ke dasbor inspeksi</p>
+              <h2 className="text-[28px] font-bold leading-tight text-ndt-text">Masuk</h2>
+              <p className="mb-6 mt-1.5 text-[15px] text-ndt-text-soft">Masuk ke dasbor inspeksi</p>
 
               <div className="space-y-5">
                 <Input
@@ -189,7 +189,7 @@ export default function LoginPage() {
                     onMouseDown={(e) => e.preventDefault()}
                     aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                     title={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
-                    className="absolute bottom-0 right-0 top-[26px] flex w-11 cursor-pointer items-center justify-center rounded-md text-[#64748B] hover:text-[#0072CE] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0072CE]"
+                    className="absolute bottom-0 right-0 top-[26px] flex w-11 cursor-pointer items-center justify-center rounded-md text-ndt-muted hover:text-ndt-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ndt-primary"
                   >
                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
@@ -199,11 +199,11 @@ export default function LoginPage() {
               {error && (
                 <p
                   role="alert"
-                  className="mt-4 flex items-start gap-2.5 rounded-[10px] border border-[#DC2626]/25 bg-[#DC2626]/[0.07] px-3.5 py-2.5 text-sm font-medium text-[#DC2626]"
+                  className="mt-4 flex items-start gap-2.5 rounded-[10px] border border-ndt-danger/25 bg-ndt-danger/[0.07] px-3.5 py-2.5 text-sm font-medium text-ndt-danger"
                 >
                   <span
                     aria-hidden="true"
-                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DC2626] text-xs font-bold text-white"
+                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ndt-danger text-xs font-bold text-white"
                   >
                     !
                   </span>
@@ -225,7 +225,7 @@ export default function LoginPage() {
           </div>
         </main>
 
-        <footer className="px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 text-center text-xs tracking-wide text-[#64748B]">
+        <footer className="px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 text-center text-xs tracking-wide text-ndt-muted">
           © 2026 PLN Pusharlis
         </footer>
       </div>

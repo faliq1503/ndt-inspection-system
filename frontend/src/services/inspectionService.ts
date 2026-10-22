@@ -68,6 +68,11 @@ export const inspectionService = {
     return apiPut<Indication>(`/indications/${indicationId}/size`, { zona, panjang_mm, lebar_mm });
   },
 
+  /** Upload foto bukti pengukuran langsung. Backend: POST /indications/{id}/upload-bukti. */
+  uploadBukti(indicationId: number, file: File): Promise<{ bukti_path: string; url: string }> {
+    return apiUpload<{ bukti_path: string; url: string }>(`/indications/${indicationId}/upload-bukti`, file);
+  },
+
   /**
    * Total seluruh indication dari semua inspection (jumlah baris,
    * bukan luas). Backend: GET /indications/count -> { total_indication }.
@@ -91,8 +96,10 @@ export const inspectionService = {
     return apiDownload(`/results/${resultId}/report/pdf`, `laporan_ndt_${resultId}.pdf`);
   },
 
-  downloadExcel(): Promise<void> {
-    return apiDownload('/results/export/excel', 'riwayat_hasil_ndt.xlsx');
+  /** resultIds diisi = export hanya baris tersebut (sesuai filter di halaman Riwayat). */
+  downloadExcel(resultIds?: number[]): Promise<void> {
+    const query = resultIds ? `?ids=${resultIds.join(',')}` : '';
+    return apiDownload(`/results/export/excel${query}`, 'riwayat_hasil_ndt.xlsx');
   },
 
   bulkDeleteResults(resultIds: number[]): Promise<{ deleted_components: number }> {
