@@ -34,8 +34,8 @@ interface IndicationModalProps {
  * Modal Add/Edit Indication.
  * Field mengikuti backend IndikasiIn: zona, panjang_mm, lebar_mm.
  * Koordinat (X/Y) hanya ditampilkan — berasal dari klik canvas.
- * Foto bukti bersifat opsional dan diupload terpisah setelah
- * indikasi tersimpan (POST /indications/{id}/upload-bukti).
+ * Foto bukti WAJIB (indikasi baru, atau indikasi lama yang belum punya foto)
+ * dan diupload terpisah setelah indikasi tersimpan (POST /indications/{id}/upload-bukti).
  */
 export default function IndicationModal({
   title,
@@ -94,6 +94,10 @@ export default function IndicationModal({
     const l = parseFloat(lebar);
     if (Number.isNaN(p) || Number.isNaN(l) || p <= 0 || l <= 0) {
       setError('Panjang dan Lebar harus angka positif (mm).');
+      return;
+    }
+    if (!buktiFile && !initialBuktiUrl) {
+      setError('Foto bukti pengukuran wajib diunggah.');
       return;
     }
     setError(null);
@@ -165,7 +169,9 @@ export default function IndicationModal({
         </div>
 
         <div>
-          <p className="mb-1.5 block text-sm font-medium text-ndt-text">Foto Bukti Pengukuran</p>
+          <p className="mb-1.5 block text-sm font-medium text-ndt-text">
+            Foto Bukti Pengukuran <span className="text-ndt-danger" aria-hidden="true">*</span>
+          </p>
           {previewUrl ? (
             <div className="flex items-start gap-3 rounded-lg border border-ndt-border bg-ndt-bg p-3">
               <img
@@ -204,7 +210,7 @@ export default function IndicationModal({
                 <circle cx="12" cy="13" r="4" />
               </svg>
               <span className="mt-2 text-sm font-medium text-ndt-text">Pilih foto bukti</span>
-              <span className="mt-0.5 text-xs text-ndt-muted">PNG/JPG · maks {MAX_BUKTI_MB} MB · opsional</span>
+              <span className="mt-0.5 text-xs text-ndt-muted">PNG/JPG · maks {MAX_BUKTI_MB} MB · wajib</span>
               <input type="file" accept="image/png,image/jpeg" onChange={handlePickFile} className="hidden" />
             </label>
           )}

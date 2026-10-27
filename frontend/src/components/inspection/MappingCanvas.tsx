@@ -154,6 +154,8 @@ export default function MappingCanvas({
   const baseScale = stageW / natW;
   const k = baseScale * zoom; // skala efektif gambar→stage
   const stageH = Math.max(240, natH * baseScale);
+  // Elips penanda dikecilkan di layar sempit (HP); desktop tetap ukuran penuh.
+  const ms = stageW < 600 ? 0.6 : 1;
 
   /** Stage point -> persen koordinat gambar (0–100). */
   function toPercent(stageX: number, stageY: number): CanvasPercent {
@@ -350,11 +352,11 @@ export default function MappingCanvas({
                       {/* Elips lonjong merah — ukuran layar tetap */}
                       <Group x={cx} y={cy} scaleX={invK} scaleY={invK}>
                         {selected && (
-                          <Ellipse radiusX={39} radiusY={32} stroke="#0072CE" strokeWidth={2.5} />
+                          <Ellipse radiusX={39 * ms} radiusY={32 * ms} stroke="#0072CE" strokeWidth={2.5} />
                         )}
                         <Ellipse
-                          radiusX={34}
-                          radiusY={27}
+                          radiusX={34 * ms}
+                          radiusY={27 * ms}
                           fill="#DC2626"
                           fillOpacity={0.25}
                           stroke="#DC2626"
@@ -374,9 +376,9 @@ export default function MappingCanvas({
                         />
                       </Group>
                       {/* Label Panjang (nilai persis tersimpan) di sisi atas */}
-                      <DimLabel x={cx} y={cy - 27 * invK} invK={invK} text={String(ind.panjang_mm)} align="center" />
+                      <DimLabel x={cx} y={cy - 27 * ms * invK} invK={invK} text={String(ind.panjang_mm)} align="center" />
                       {/* Label Lebar (nilai persis tersimpan) di sisi kiri */}
-                      <DimLabel x={cx - 34 * invK} y={cy} invK={invK} text={String(ind.lebar_mm)} align="right" />
+                      <DimLabel x={cx - 34 * ms * invK} y={cy} invK={invK} text={String(ind.lebar_mm)} align="right" />
                     </Group>
                   );
                 })}
