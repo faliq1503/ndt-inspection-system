@@ -137,7 +137,7 @@ def _tulis_tabel(ws, data: list) -> int:
     for row in data:
         r += 1
         nilai = [
-            row["id"], row["jenis_benda"], row["diameter_mm"], row["zona"],
+            row["nomor"], row["jenis_benda"], row["diameter_mm"], row["zona"],
             row["a_babbit"], row["a_zone_a"], row["a_zone_c"],
             row["a_unbond_zone_a"], row["persen_unbond_zone_a"], label_status(row["status_zone_a"]),
             row["a_unbond_zone_c"], row["persen_unbond_zone_c"], label_status(row["status_zone_c"]),

@@ -358,8 +358,10 @@ def simpan_evaluation_result(hasil: dict) -> int:
 def ambil_semua_hasil():
     conn = get_connection()
     cur = conn.cursor()
+    # nomor = nomor urut tampilan tanpa lompatan (id asli tetap dipakai sebagai kunci).
     cur.execute("""
-        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.unit_asal, c.tanggal_input
+        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.unit_asal, c.tanggal_input,
+               ROW_NUMBER() OVER (ORDER BY er.id ASC) AS nomor
         FROM evaluation_result er
         JOIN component c ON er.component_id = c.id
         ORDER BY er.id DESC
@@ -433,7 +435,9 @@ def ambil_hasil_by_id(result_id: int):
     cur = conn.cursor()
     cur.execute("""
         SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.id as comp_id,
-               c.unit_asal, c.tanggal_input, s.nama_standard
+               c.unit_asal, c.tanggal_input, s.nama_standard,
+               (SELECT COUNT(*) FROM evaluation_result x WHERE x.id <= er.id
+                  AND EXISTS (SELECT 1 FROM component cx WHERE cx.id = x.component_id)) AS nomor
         FROM evaluation_result er
         JOIN component c ON er.component_id = c.id
         LEFT JOIN standard s ON c.standard_id = s.id

@@ -92,8 +92,8 @@ export const inspectionService = {
     return apiGet<ResultRow[]>('/results');
   },
 
-  downloadReportPdf(resultId: number): Promise<void> {
-    return apiDownload(`/results/${resultId}/report/pdf`, `laporan_ndt_${resultId}.pdf`);
+  downloadReportPdf(resultId: number, nomor: number = resultId): Promise<void> {
+    return apiDownload(`/results/${resultId}/report/pdf`, `laporan_ndt_${nomor}.pdf`);
   },
 
   /** resultIds diisi = export hanya baris tersebut (sesuai filter di halaman Riwayat). */

@@ -384,7 +384,7 @@ def export_pdf(result_id: int, user: dict = Depends(get_current_user)):
     path = generate_pdf_report(result_id, hasil, indikasi_list, gambar_filename=gambar,
                                dicetak_oleh=user["username"])
 
-    return FileResponse(path, media_type="application/pdf", filename=f"laporan_ndt_{result_id}.pdf")
+    return FileResponse(path, media_type="application/pdf", filename=f"laporan_ndt_{hasil['nomor']}.pdf")
 
 
 @app.post("/results/bulk-delete")

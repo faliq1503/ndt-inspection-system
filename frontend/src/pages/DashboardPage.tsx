@@ -431,7 +431,7 @@ export default function DashboardPage() {
                   <tbody>
                     {recent.map((r) => (
                       <tr key={r.id} className="border-b border-ndt-border last:border-0 hover:bg-ndt-primary-light/60">
-                        <td className="py-2 pr-4 font-semibold">#{r.id}</td>
+                        <td className="py-2 pr-4 font-semibold">#{r.nomor}</td>
                         <td className="py-2 pr-4 tabular-nums">{formatShortDate(r.tanggal_input)}</td>
                         <td className="py-2 pr-4">
                           <span className="capitalize">{r.jenis_benda}</span>
@@ -471,7 +471,7 @@ export default function DashboardPage() {
                     <Link to={`/inspection/${r.id}`} className="flex items-center justify-between gap-3 py-2.5">
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-semibold">
-                          #{r.id} · <span className="capitalize">{r.jenis_benda}</span>
+                          #{r.nomor} · <span className="capitalize">{r.jenis_benda}</span>
                         </span>
                         <span className="block text-xs text-ndt-muted">
                           {formatShortDate(r.tanggal_input)} · A <PercentValue value={r.persen_unbond_zone_a} /> · C{' '}

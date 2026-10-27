@@ -22,7 +22,7 @@ type SortDir = 'asc' | 'desc';
 function sortValue(r: ResultRow, key: SortKey): string | number | null {
   switch (key) {
     case 'id':
-      return r.id;
+      return r.nomor;
     case 'tanggal':
       return parseDbDate(r.tanggal_input)?.getTime() ?? null;
     case 'komponen':
@@ -91,15 +91,15 @@ function RowActions({
 }: {
   r: ResultRow;
   downloadingId: number | null;
-  onExportPdf: (id: number) => void;
+  onExportPdf: (id: number, nomor: number) => void;
   onDelete: (r: ResultRow) => void;
 }) {
   return (
     <span className="flex items-center gap-1">
       <Link
         to={`/inspection/${r.id}`}
-        title={`Detail inspeksi #${r.id}`}
-        aria-label={`Detail inspeksi #${r.id}`}
+        title={`Detail inspeksi #${r.nomor}`}
+        aria-label={`Detail inspeksi #${r.nomor}`}
         className="rounded-md p-1.5 text-ndt-primary hover:bg-ndt-primary-light"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -109,10 +109,10 @@ function RowActions({
       </Link>
       <button
         type="button"
-        onClick={() => onExportPdf(r.id)}
+        onClick={() => onExportPdf(r.id, r.nomor)}
         disabled={downloadingId !== null}
-        title={`Ekspor PDF inspeksi #${r.id}`}
-        aria-label={`Ekspor PDF inspeksi #${r.id}`}
+        title={`Ekspor PDF inspeksi #${r.nomor}`}
+        aria-label={`Ekspor PDF inspeksi #${r.nomor}`}
         className="rounded-md p-1.5 text-ndt-text hover:bg-ndt-primary-light hover:text-ndt-primary disabled:opacity-40"
       >
         {downloadingId === r.id ? (
@@ -128,8 +128,8 @@ function RowActions({
       <button
         type="button"
         onClick={() => onDelete(r)}
-        title={`Hapus inspeksi #${r.id}`}
-        aria-label={`Hapus inspeksi #${r.id}`}
+        title={`Hapus inspeksi #${r.nomor}`}
+        aria-label={`Hapus inspeksi #${r.nomor}`}
         className="rounded-md p-1.5 text-ndt-muted hover:bg-ndt-danger/10 hover:text-ndt-danger"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -207,7 +207,7 @@ export default function HistoryPage() {
       }
       if (!q) return true;
       return (
-        String(r.id).includes(q) ||
+        String(r.nomor).includes(q) ||
         r.jenis_benda.toLowerCase().includes(q) ||
         r.zona.toLowerCase().includes(q) ||
         (r.unit_asal ?? '').toLowerCase().includes(q) ||
@@ -256,7 +256,7 @@ export default function HistoryPage() {
     setDlError(null);
     try {
       await inspectionService.bulkDeleteResults([deleteTarget.id]);
-      toast.success(`Inspeksi #${deleteTarget.id} berhasil dihapus.`);
+      toast.success(`Inspeksi #${deleteTarget.nomor} berhasil dihapus.`);
       load();
     } catch (err) {
       setDlError(err instanceof Error ? err.message : 'Gagal menghapus inspeksi.');
@@ -267,11 +267,11 @@ export default function HistoryPage() {
   }
 
   /** Export PDF backend (reportlab) untuk satu baris inspeksi. */
-  async function handleExportPdf(resultId: number) {
+  async function handleExportPdf(resultId: number, nomor: number) {
     setDlError(null);
     setDownloadingId(resultId);
     try {
-      await inspectionService.downloadReportPdf(resultId);
+      await inspectionService.downloadReportPdf(resultId, nomor);
     } catch (err) {
       setDlError(err instanceof Error ? err.message : 'Gagal mengunduh PDF.');
     } finally {
@@ -447,7 +447,7 @@ export default function HistoryPage() {
                   <tr key={r.id} className="border-b border-ndt-border last:border-0 hover:bg-ndt-primary-light/60">
                     <td className="py-2 pr-4 font-semibold text-ndt-primary">
                       <Link to={`/inspection/${r.id}`} className="hover:underline">
-                        #{r.id}
+                        #{r.nomor}
                       </Link>
                     </td>
                     <td className="py-2 pr-4 tabular-nums">{formatShortDate(r.tanggal_input)}</td>
@@ -505,7 +505,7 @@ export default function HistoryPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <Link to={`/inspection/${r.id}`} className="font-semibold text-ndt-primary">
-                        #{r.id} · <span className="capitalize">{r.jenis_benda}</span>
+                        #{r.nomor} · <span className="capitalize">{r.jenis_benda}</span>
                       </Link>
                       <p className="truncate text-xs text-ndt-muted">
                         {formatShortDate(r.tanggal_input)} · {r.zona || '-'} · {r.unit_asal || '-'}
@@ -586,8 +586,8 @@ export default function HistoryPage() {
       )}
       <ConfirmDialog
         open={deleteTarget !== null}
-        title={`Hapus inspeksi #${deleteTarget?.id ?? ''}?`}
-        message={`Inspeksi #${deleteTarget?.id ?? ''} akan dihapus permanen, termasuk foto dan semua indikasinya. Tindakan ini tidak bisa dibatalkan.`}
+        title={`Hapus inspeksi #${deleteTarget?.nomor ?? ''}?`}
+        message={`Inspeksi #${deleteTarget?.nomor ?? ''} akan dihapus permanen, termasuk foto dan semua indikasinya. Tindakan ini tidak bisa dibatalkan.`}
         confirmLabel="Hapus"
         loading={deleting}
         onConfirm={handleDelete}

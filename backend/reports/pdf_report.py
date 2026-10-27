@@ -173,7 +173,7 @@ def _blok_judul_dan_info(result_id, hasil, dicetak_oleh, waktu_cetak, styles):
 
     diameter = hasil.get("diameter_mm")
     info_kiri = [
-        ("No. Inspeksi", f"#{result_id}"),
+        ("No. Inspeksi", f"#{hasil.get('nomor', result_id)}"),
         ("Tanggal Inspeksi", _tanggal_inspeksi(hasil.get("tanggal_input"))),
         ("Jenis Benda", hasil.get("jenis_benda") or "-"),
         ("Diameter", _dengan_satuan(diameter, "mm") if diameter else "- (P diisi langsung)"),
@@ -521,12 +521,13 @@ def generate_pdf_report(result_id: int, hasil: dict, indikasi_list: list,
     os.makedirs(REPORTS_DIR, exist_ok=True)
     path = os.path.join(REPORTS_DIR, f"laporan_{result_id}.pdf")
     waktu_cetak = waktu_cetak or datetime.now()
+    nomor = hasil.get("nomor", result_id)
 
     doc = SimpleDocTemplate(
         path, pagesize=A4,
         leftMargin=MARGIN_X, rightMargin=MARGIN_X,
         topMargin=KOP_ATAS + KOP_TINGGI + 6 * mm, bottomMargin=18 * mm,
-        title=f"Laporan Hasil Inspeksi NDT #{result_id}", author=NAMA_SISTEM,
+        title=f"Laporan Hasil Inspeksi NDT #{nomor}", author=NAMA_SISTEM,
     )
     styles = _buat_styles()
 
@@ -542,7 +543,7 @@ def generate_pdf_report(result_id: int, hasil: dict, indikasi_list: list,
         elements += _blok_tanda_tangan(styles)
 
         class _Canvas(_CanvasBernomor):
-            teks_kiri = (f"{NAMA_SISTEM} - Laporan Inspeksi #{result_id} - "
+            teks_kiri = (f"{NAMA_SISTEM} - Laporan Inspeksi #{nomor} - "
                          f"dicetak {format_tanggal_indo(waktu_cetak)}")
 
         doc.build(elements, onFirstPage=_gambar_kop, onLaterPages=_gambar_kop, canvasmaker=_Canvas)
