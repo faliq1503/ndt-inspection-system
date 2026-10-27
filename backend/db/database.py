@@ -128,6 +128,22 @@ def init_db():
     conn.commit()
     conn.close()
     init_users_table()
+    _seed_standard_default()
+
+
+def _seed_standard_default():
+    """Database baru otomatis punya satu standard (DOD-STD-2183 SH) agar inspeksi bisa langsung dibuat."""
+    if ambil_semua_standard():
+        return
+    tambah_standard(
+        "DOD-STD-2183 (SH)",
+        lebar_zona_a_mm=25.0,
+        toleransi_persen=15.0,
+        individu_zona_a_mm=12.5,
+        individu_zona_c_persen=3.0,
+        individu_zona_c_max_mm2=650.0,
+        keterangan="Standar default sesuai DOD-STD-2183 (SH)",
+    )
 
 
 # ---------------------------------------------------------------------
