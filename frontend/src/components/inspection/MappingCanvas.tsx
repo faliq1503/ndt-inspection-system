@@ -116,6 +116,8 @@ export default function MappingCanvas({
     origX: 0,
     origY: 0,
     onImage: false,
+    lastX: 0,
+    lastY: 0,
   });
 
   // Muat gambar (display saja; piksel tidak diekspor)
@@ -187,6 +189,51 @@ export default function MappingCanvas({
   function resetView() {
     setZoom(1);
     setPos({ x: 0, y: 0 });
+  }
+
+  function handlePointerDown(e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) {
+    const p = stageRef.current?.getPointerPosition();
+    if (!p) return;
+    panRef.current = {
+      active: true,
+      panning: false,
+      startX: p.x,
+      startY: p.y,
+      origX: pos.x,
+      origY: pos.y,
+      onImage: e.target === imageNodeRef.current,
+      lastX: p.x,
+      lastY: p.y,
+    };
+  }
+
+  function handlePointerMove() {
+    const st = panRef.current;
+    if (!st.active) return;
+    const p = stageRef.current?.getPointerPosition();
+    if (!p) return;
+    st.lastX = p.x;
+    st.lastY = p.y;
+    const dx = p.x - st.startX;
+    const dy = p.y - st.startY;
+    if (!st.panning && Math.hypot(dx, dy) > 6) st.panning = true;
+    if (st.panning) setPos({ x: st.origX + dx, y: st.origY + dy });
+  }
+
+  function handlePointerUp() {
+    const st = panRef.current;
+    if (st.active && !st.panning && st.onImage && !readOnly) {
+      // Pada touchend Konva tidak punya posisi pointer, pakai posisi terakhir.
+      const p = stageRef.current?.getPointerPosition() ?? { x: st.lastX, y: st.lastY };
+      onCanvasClick(toPercent(p.x, p.y));
+    }
+    st.active = false;
+    st.panning = false;
+  }
+
+  function handlePointerCancel() {
+    panRef.current.active = false;
+    panRef.current.panning = false;
   }
 
   // Center-kan marker ketika tabel meminta (klik row)
@@ -261,45 +308,15 @@ export default function MappingCanvas({
           height={stageH}
           // Catatan: zoom via scroll/wheel sengaja dimatikan agar scroll
           // halaman tetap natural. Zoom hanya lewat tombol toolbar.
-          onMouseDown={(e) => {
-            const stage = stageRef.current;
-            const p = stage?.getPointerPosition();
-            if (!p) return;
-            panRef.current = {
-              active: true,
-              panning: false,
-              startX: p.x,
-              startY: p.y,
-              origX: pos.x,
-              origY: pos.y,
-              onImage: e.target === imageNodeRef.current,
-            };
-          }}
-          onMouseMove={() => {
-            const st = panRef.current;
-            if (!st.active) return;
-            const stage = stageRef.current;
-            const p = stage?.getPointerPosition();
-            if (!p) return;
-            const dx = p.x - st.startX;
-            const dy = p.y - st.startY;
-            if (!st.panning && Math.hypot(dx, dy) > 6) st.panning = true;
-            if (st.panning) setPos({ x: st.origX + dx, y: st.origY + dy });
-          }}
-          onMouseUp={() => {
-            const st = panRef.current;
-            if (st.active && !st.panning && st.onImage && !readOnly) {
-              const stage = stageRef.current;
-              const p = stage?.getPointerPosition();
-              if (p) onCanvasClick(toPercent(p.x, p.y));
-            }
-            st.active = false;
-            st.panning = false;
-          }}
-          onMouseLeave={() => {
-            panRef.current.active = false;
-            panRef.current.panning = false;
-          }}
+          onMouseDown={handlePointerDown}
+          onMouseMove={handlePointerMove}
+          onMouseUp={handlePointerUp}
+          onMouseLeave={handlePointerCancel}
+          // Layar sentuh (Android/iOS) hanya memicu event touch, bukan mouse.
+          onTouchStart={handlePointerDown}
+          onTouchMove={handlePointerMove}
+          onTouchEnd={handlePointerUp}
+          onTouchCancel={handlePointerCancel}
         >
           <Layer>
             <Group x={pos.x} y={pos.y} scaleX={k} scaleY={k}>
@@ -318,7 +335,14 @@ export default function MappingCanvas({
                       onMouseDown={(e) => {
                         e.cancelBubble = true;
                       }}
+                      onTouchStart={(e) => {
+                        e.cancelBubble = true;
+                      }}
                       onClick={(e) => {
+                        e.cancelBubble = true;
+                        onSelect(ind.id);
+                      }}
+                      onTap={(e) => {
                         e.cancelBubble = true;
                         onSelect(ind.id);
                       }}
