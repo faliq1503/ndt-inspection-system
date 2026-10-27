@@ -23,7 +23,7 @@ from reports.kop_pln import (
     format_tanggal_indo, label_status,
 )
 
-REPORTS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "reports")
+from core.config import REPORTS_DIR
 
 JUDUL_LAPORAN = "LAPORAN RIWAYAT INSPEKSI NDT"
 

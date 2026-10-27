@@ -3,18 +3,18 @@ core/security.py
 
 Hash password (bcrypt) dan pembuatan/pembacaan token JWT.
 
-SECRET_KEY diambil dari environment variable NDT_SECRET_KEY.
-Nilai default di bawah HANYA untuk development; wajib diganti
-sebelum dipakai di kantor.
+SECRET_KEY diambil dari environment variable NDT_SECRET_KEY (lihat core/config.py).
+Tanpa nilai itu backend menolak start.
 """
 
 import datetime
-import os
 
 import bcrypt
 import jwt
 
-SECRET_KEY = os.environ.get("NDT_SECRET_KEY", "dev-only-ganti-sebelum-dipakai-di-kantor")
+from core.config import SECRET_KEY
+
+
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_HOURS = 8
 

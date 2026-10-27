@@ -1,0 +1,15 @@
+# /etc/systemd/system/ndt-backend.service
+[Unit]
+Description=NDT Inspection System (FastAPI)
+After=network.target
+
+[Service]
+User=ndt
+WorkingDirectory=/var/www/ndt/backend
+# Rahasia dan lokasi data dibaca dari /var/www/ndt/backend/.env
+ExecStart=/var/www/ndt/backend/.venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

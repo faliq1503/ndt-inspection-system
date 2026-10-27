@@ -9,7 +9,7 @@ Zone A & Zone C terpisah (DOD-STD-2183 SH).
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "ndt.db")
+from core.config import DB_PATH
 
 
 def get_connection():

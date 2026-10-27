@@ -31,8 +31,7 @@ from reports.kop_pln import (
     label_status,
 )
 
-REPORTS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "reports")
-IMAGES_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "images")
+from core.config import IMAGES_DIR, REPORTS_DIR
 
 JUDUL_LAPORAN = "LAPORAN HASIL INSPEKSI NDT"
 
