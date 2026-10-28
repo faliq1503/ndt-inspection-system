@@ -108,6 +108,8 @@ export interface EvaluationResult {
  */
 export interface ResultRow extends EvaluationResult {
   id: number;
+  /** Nomor urut tampilan tanpa lompatan (dihitung backend); `id` tetap kunci asli. */
+  nomor: number;
   unit_asal: string | null;
   jenis_benda: string;
   diameter_mm: number;

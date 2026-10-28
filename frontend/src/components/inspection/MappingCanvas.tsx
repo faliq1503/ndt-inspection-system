@@ -116,6 +116,8 @@ export default function MappingCanvas({
     origX: 0,
     origY: 0,
     onImage: false,
+    lastX: 0,
+    lastY: 0,
   });
 
   // Muat gambar (display saja; piksel tidak diekspor)
@@ -152,6 +154,8 @@ export default function MappingCanvas({
   const baseScale = stageW / natW;
   const k = baseScale * zoom; // skala efektif gambar→stage
   const stageH = Math.max(240, natH * baseScale);
+  // Elips penanda dikecilkan di layar sempit (HP); desktop tetap ukuran penuh.
+  const ms = stageW < 600 ? 0.6 : 1;
 
   /** Stage point -> persen koordinat gambar (0–100). */
   function toPercent(stageX: number, stageY: number): CanvasPercent {
@@ -187,6 +191,51 @@ export default function MappingCanvas({
   function resetView() {
     setZoom(1);
     setPos({ x: 0, y: 0 });
+  }
+
+  function handlePointerDown(e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) {
+    const p = stageRef.current?.getPointerPosition();
+    if (!p) return;
+    panRef.current = {
+      active: true,
+      panning: false,
+      startX: p.x,
+      startY: p.y,
+      origX: pos.x,
+      origY: pos.y,
+      onImage: e.target === imageNodeRef.current,
+      lastX: p.x,
+      lastY: p.y,
+    };
+  }
+
+  function handlePointerMove() {
+    const st = panRef.current;
+    if (!st.active) return;
+    const p = stageRef.current?.getPointerPosition();
+    if (!p) return;
+    st.lastX = p.x;
+    st.lastY = p.y;
+    const dx = p.x - st.startX;
+    const dy = p.y - st.startY;
+    if (!st.panning && Math.hypot(dx, dy) > 6) st.panning = true;
+    if (st.panning) setPos({ x: st.origX + dx, y: st.origY + dy });
+  }
+
+  function handlePointerUp() {
+    const st = panRef.current;
+    if (st.active && !st.panning && st.onImage && !readOnly) {
+      // Pada touchend Konva tidak punya posisi pointer, pakai posisi terakhir.
+      const p = stageRef.current?.getPointerPosition() ?? { x: st.lastX, y: st.lastY };
+      onCanvasClick(toPercent(p.x, p.y));
+    }
+    st.active = false;
+    st.panning = false;
+  }
+
+  function handlePointerCancel() {
+    panRef.current.active = false;
+    panRef.current.panning = false;
   }
 
   // Center-kan marker ketika tabel meminta (klik row)
@@ -261,45 +310,15 @@ export default function MappingCanvas({
           height={stageH}
           // Catatan: zoom via scroll/wheel sengaja dimatikan agar scroll
           // halaman tetap natural. Zoom hanya lewat tombol toolbar.
-          onMouseDown={(e) => {
-            const stage = stageRef.current;
-            const p = stage?.getPointerPosition();
-            if (!p) return;
-            panRef.current = {
-              active: true,
-              panning: false,
-              startX: p.x,
-              startY: p.y,
-              origX: pos.x,
-              origY: pos.y,
-              onImage: e.target === imageNodeRef.current,
-            };
-          }}
-          onMouseMove={() => {
-            const st = panRef.current;
-            if (!st.active) return;
-            const stage = stageRef.current;
-            const p = stage?.getPointerPosition();
-            if (!p) return;
-            const dx = p.x - st.startX;
-            const dy = p.y - st.startY;
-            if (!st.panning && Math.hypot(dx, dy) > 6) st.panning = true;
-            if (st.panning) setPos({ x: st.origX + dx, y: st.origY + dy });
-          }}
-          onMouseUp={() => {
-            const st = panRef.current;
-            if (st.active && !st.panning && st.onImage && !readOnly) {
-              const stage = stageRef.current;
-              const p = stage?.getPointerPosition();
-              if (p) onCanvasClick(toPercent(p.x, p.y));
-            }
-            st.active = false;
-            st.panning = false;
-          }}
-          onMouseLeave={() => {
-            panRef.current.active = false;
-            panRef.current.panning = false;
-          }}
+          onMouseDown={handlePointerDown}
+          onMouseMove={handlePointerMove}
+          onMouseUp={handlePointerUp}
+          onMouseLeave={handlePointerCancel}
+          // Layar sentuh (Android/iOS) hanya memicu event touch, bukan mouse.
+          onTouchStart={handlePointerDown}
+          onTouchMove={handlePointerMove}
+          onTouchEnd={handlePointerUp}
+          onTouchCancel={handlePointerCancel}
         >
           <Layer>
             <Group x={pos.x} y={pos.y} scaleX={k} scaleY={k}>
@@ -318,7 +337,14 @@ export default function MappingCanvas({
                       onMouseDown={(e) => {
                         e.cancelBubble = true;
                       }}
+                      onTouchStart={(e) => {
+                        e.cancelBubble = true;
+                      }}
                       onClick={(e) => {
+                        e.cancelBubble = true;
+                        onSelect(ind.id);
+                      }}
+                      onTap={(e) => {
                         e.cancelBubble = true;
                         onSelect(ind.id);
                       }}
@@ -326,11 +352,11 @@ export default function MappingCanvas({
                       {/* Elips lonjong merah — ukuran layar tetap */}
                       <Group x={cx} y={cy} scaleX={invK} scaleY={invK}>
                         {selected && (
-                          <Ellipse radiusX={39} radiusY={32} stroke="#0072CE" strokeWidth={2.5} />
+                          <Ellipse radiusX={39 * ms} radiusY={32 * ms} stroke="#0072CE" strokeWidth={2.5} />
                         )}
                         <Ellipse
-                          radiusX={34}
-                          radiusY={27}
+                          radiusX={34 * ms}
+                          radiusY={27 * ms}
                           fill="#DC2626"
                           fillOpacity={0.25}
                           stroke="#DC2626"
@@ -350,9 +376,9 @@ export default function MappingCanvas({
                         />
                       </Group>
                       {/* Label Panjang (nilai persis tersimpan) di sisi atas */}
-                      <DimLabel x={cx} y={cy - 27 * invK} invK={invK} text={String(ind.panjang_mm)} align="center" />
+                      <DimLabel x={cx} y={cy - 27 * ms * invK} invK={invK} text={String(ind.panjang_mm)} align="center" />
                       {/* Label Lebar (nilai persis tersimpan) di sisi kiri */}
-                      <DimLabel x={cx - 34 * invK} y={cy} invK={invK} text={String(ind.lebar_mm)} align="right" />
+                      <DimLabel x={cx - 34 * ms * invK} y={cy} invK={invK} text={String(ind.lebar_mm)} align="right" />
                     </Group>
                   );
                 })}

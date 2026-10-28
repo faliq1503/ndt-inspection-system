@@ -205,10 +205,10 @@ export default function DetailPage() {
               Riwayat Inspeksi
             </Link>
             <span aria-hidden="true" className="mx-1.5 text-ndt-muted">/</span>
-            <span className="text-ndt-muted">Detail #{result.id}</span>
+            <span className="text-ndt-muted">Detail #{result.nomor}</span>
           </nav>
           <h1 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-semibold text-ndt-text">
-            Detail Inspeksi #{result.id}
+            Detail Inspeksi #{result.nomor}
             <StatusBadge status={result.status} />
           </h1>
         </div>
@@ -218,7 +218,7 @@ export default function DetailPage() {
             onClick={() => {
               setDlError(null);
               inspectionService
-                .downloadReportPdf(result.id)
+                .downloadReportPdf(result.id, result.nomor)
                 .catch((err: unknown) => setDlError(err instanceof Error ? err.message : 'Gagal mengunduh PDF.'));
             }}
             className="inline-flex items-center gap-1.5 rounded-md bg-ndt-primary px-4 py-2 text-sm font-medium text-white hover:bg-ndt-primary-dark"

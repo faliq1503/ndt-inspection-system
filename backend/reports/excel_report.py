@@ -23,7 +23,7 @@ from reports.kop_pln import (
     format_tanggal_indo, label_status,
 )
 
-REPORTS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "reports")
+from core.config import REPORTS_DIR
 
 JUDUL_LAPORAN = "LAPORAN RIWAYAT INSPEKSI NDT"
 
@@ -137,7 +137,7 @@ def _tulis_tabel(ws, data: list) -> int:
     for row in data:
         r += 1
         nilai = [
-            row["id"], row["jenis_benda"], row["diameter_mm"], row["zona"],
+            row["nomor"], row["jenis_benda"], row["diameter_mm"], row["zona"],
             row["a_babbit"], row["a_zone_a"], row["a_zone_c"],
             row["a_unbond_zone_a"], row["persen_unbond_zone_a"], label_status(row["status_zone_a"]),
             row["a_unbond_zone_c"], row["persen_unbond_zone_c"], label_status(row["status_zone_c"]),

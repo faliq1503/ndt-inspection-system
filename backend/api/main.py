@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from api.auth import bearer_scheme, get_current_user, require_admin, router as auth_router
 
+from core.config import CORS_ORIGINS, IMAGES_DIR
 from core.calculations import hitung_bond_dan_persen_individual
 from core.evaluation import evaluasi_komponen
 from core.models import Standard
@@ -69,14 +70,12 @@ app = FastAPI(title="NDT Mapping API", dependencies=[Depends(enforce_login)])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 app.include_router(auth_router)
 
-IMAGES_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "images")
-os.makedirs(IMAGES_DIR, exist_ok=True)
 app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
 
 
@@ -384,7 +383,7 @@ def export_pdf(result_id: int, user: dict = Depends(get_current_user)):
     path = generate_pdf_report(result_id, hasil, indikasi_list, gambar_filename=gambar,
                                dicetak_oleh=user["username"])
 
-    return FileResponse(path, media_type="application/pdf", filename=f"laporan_ndt_{result_id}.pdf")
+    return FileResponse(path, media_type="application/pdf", filename=f"laporan_ndt_{hasil['nomor']}.pdf")
 
 
 @app.post("/results/bulk-delete")
