@@ -9,7 +9,7 @@ Zone A & Zone C terpisah (DOD-STD-2183 SH).
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "ndt.db")
+from core.config import DB_PATH
 
 
 def get_connection():
@@ -128,6 +128,22 @@ def init_db():
     conn.commit()
     conn.close()
     init_users_table()
+    _seed_standard_default()
+
+
+def _seed_standard_default():
+    """Database baru otomatis punya satu standard (DOD-STD-2183 SH) agar inspeksi bisa langsung dibuat."""
+    if ambil_semua_standard():
+        return
+    tambah_standard(
+        "DOD-STD-2183 (SH)",
+        lebar_zona_a_mm=25.0,
+        toleransi_persen=15.0,
+        individu_zona_a_mm=12.5,
+        individu_zona_c_persen=3.0,
+        individu_zona_c_max_mm2=650.0,
+        keterangan="Standar default sesuai DOD-STD-2183 (SH)",
+    )
 
 
 # ---------------------------------------------------------------------
@@ -358,8 +374,10 @@ def simpan_evaluation_result(hasil: dict) -> int:
 def ambil_semua_hasil():
     conn = get_connection()
     cur = conn.cursor()
+    # nomor = nomor urut tampilan tanpa lompatan (id asli tetap dipakai sebagai kunci).
     cur.execute("""
-        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.unit_asal, c.tanggal_input
+        SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.unit_asal, c.tanggal_input,
+               ROW_NUMBER() OVER (ORDER BY er.id ASC) AS nomor
         FROM evaluation_result er
         JOIN component c ON er.component_id = c.id
         ORDER BY er.id DESC
@@ -433,7 +451,9 @@ def ambil_hasil_by_id(result_id: int):
     cur = conn.cursor()
     cur.execute("""
         SELECT er.*, c.jenis_benda, c.diameter_mm, c.zona, c.inspector, c.id as comp_id,
-               c.unit_asal, c.tanggal_input, s.nama_standard
+               c.unit_asal, c.tanggal_input, s.nama_standard,
+               (SELECT COUNT(*) FROM evaluation_result x WHERE x.id <= er.id
+                  AND EXISTS (SELECT 1 FROM component cx WHERE cx.id = x.component_id)) AS nomor
         FROM evaluation_result er
         JOIN component c ON er.component_id = c.id
         LEFT JOIN standard s ON c.standard_id = s.id

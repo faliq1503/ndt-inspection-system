@@ -60,3 +60,9 @@ Thumbs.db
 
 *.tmp
 *.temp
+# =========================
+# Data & venv (jangan di-commit)
+# =========================
+
+venv/
+backend/data/
