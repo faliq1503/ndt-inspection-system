@@ -6,6 +6,7 @@ Konfigurasi dari environment variable (boleh lewat file backend/.env).
 NDT_SECRET_KEY    wajib, kunci penanda tangan token login (JWT)
 NDT_DATA_DIR      folder data (database, gambar, laporan); default backend/data
 NDT_CORS_ORIGINS  daftar origin frontend dipisah koma; default alamat dev Vite
+NDT_API_DOCS      isi 1 untuk membuka dokumentasi API (/docs); default tertutup
 """
 
 import os
@@ -28,6 +29,10 @@ CORS_ORIGINS = [
     for o in os.environ.get("NDT_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
     if o.strip()
 ]
+
+# Dokumentasi API otomatis (/docs, /redoc, /openapi.json) memperlihatkan semua endpoint,
+# jadi hanya dibuka bila diminta (mis. di laptop saat pengembangan)
+API_DOCS = os.environ.get("NDT_API_DOCS", "").strip().lower() in ("1", "true", "yes")
 
 SECRET_KEY = os.environ.get("NDT_SECRET_KEY", "").strip()
 if len(SECRET_KEY) < 32:

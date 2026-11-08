@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from api.auth import bearer_scheme, get_current_user, require_admin, router as auth_router
 
-from core.config import CORS_ORIGINS, IMAGES_DIR
+from core.config import API_DOCS, CORS_ORIGINS, IMAGES_DIR
 from core.calculations import hitung_bond_dan_persen_individual
 from core.evaluation import evaluasi_komponen
 from core.models import Standard
@@ -66,7 +66,13 @@ def enforce_login(
     get_current_user(cred)
 
 
-app = FastAPI(title="NDT Mapping API", dependencies=[Depends(enforce_login)])
+app = FastAPI(
+    title="NDT Mapping API",
+    dependencies=[Depends(enforce_login)],
+    docs_url="/docs" if API_DOCS else None,
+    redoc_url="/redoc" if API_DOCS else None,
+    openapi_url="/openapi.json" if API_DOCS else None,
+)
 
 app.add_middleware(
     CORSMiddleware,
