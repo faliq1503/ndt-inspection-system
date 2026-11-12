@@ -49,6 +49,7 @@ from db.database import (
     update_ukuran_indikasi,
     ambil_indikasi_by_id,
     simpan_bukti_path,
+    hapus_indikasi,
 )
 from reports.pdf_report import generate_pdf_report
 from reports.excel_report import generate_excel_riwayat
@@ -123,6 +124,8 @@ class IndikasiIn(BaseModel):
     lebar_mm: float = 0
     posisi_x: Optional[float] = None
     posisi_y: Optional[float] = None
+    # Hanya untuk mengembalikan indikasi yang dihapus lewat Urungkan (foto bukti lama dipakai lagi)
+    bukti_path: Optional[str] = None
 
 
 class IndikasiUpdateIn(BaseModel):
@@ -261,15 +264,35 @@ def add_indication(component_id: int, data: IndikasiIn):
     if comp is None:
         raise HTTPException(status_code=404, detail="Component tidak ditemukan")
 
+    bukti = data.bukti_path
+    if bukti is not None and (
+        bukti != os.path.basename(bukti)
+        or not bukti.startswith("evidence_")
+        or not os.path.isfile(os.path.join(IMAGES_DIR, bukti))
+    ):
+        raise HTTPException(status_code=400, detail="Foto bukti tidak valid")
+
     new_id = tambah_indikasi(
         component_id, data.zona, data.panjang_mm, data.lebar_mm, data.posisi_x, data.posisi_y
     )
+    if bukti:
+        simpan_bukti_path(new_id, bukti)
     return {"id": new_id, **data.dict()}
 
 
 @app.get("/indications/count")
 def count_indications():
     return {"total_indication": hitung_total_indikasi()}
+
+
+@app.delete("/indications/{indication_id}")
+def delete_indication(indication_id: int):
+    """Untuk Urungkan. File foto bukti sengaja tidak dihapus supaya Ulangi bisa memakainya lagi."""
+    ind = ambil_indikasi_by_id(indication_id)
+    if ind is None:
+        raise HTTPException(status_code=404, detail="Indikasi tidak ditemukan")
+    hapus_indikasi(indication_id)
+    return ind
 
 
 @app.put("/indications/{indication_id}/position")

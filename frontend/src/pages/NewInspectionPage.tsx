@@ -15,6 +15,7 @@ import Modal from '../components/common/Modal';
 import CriteriaComparison from '../components/inspection/CriteriaComparison';
 import IndicationTotals from '../components/inspection/IndicationTotals';
 import type { CanvasPercent } from '../components/inspection/MappingCanvas';
+import { useIndicationHistory } from '../components/inspection/useIndicationHistory';
 
 /** Konva dimuat terpisah (code-split) agar bundle awal tetap kecil. */
 const MappingCanvas = lazy(() => import('../components/inspection/MappingCanvas'));
@@ -55,6 +56,9 @@ export default function NewInspectionPage() {
   const [modalSaving, setModalSaving] = useState(false);
   const [buktiView, setBuktiView] = useState<{ url: string; nomor: number } | null>(null);
   const [focusReq, setFocusReq] = useState<{ id: number; nonce: number } | null>(null);
+  const riwayat = useIndicationHistory(componentId, () =>
+    componentId !== null ? refreshComponent(componentId) : Promise.resolve(),
+  );
   // Langkah yang sedang ditampilkan: 1 Data → 2 Gambar & Pemetaan → 3 Hasil
   const [step, setStep] = useState<1 | 2 | 3>(() => (result !== null ? 3 : componentId !== null ? 2 : 1));
 
@@ -179,6 +183,7 @@ export default function NewInspectionPage() {
         posisi_x: addPos.x,
         posisi_y: addPos.y,
       });
+      riwayat.catatTambah(created.id);
       if (v.buktiFile) {
         await inspectionService.uploadBukti(created.id, v.buktiFile);
       }
@@ -199,6 +204,11 @@ export default function NewInspectionPage() {
     setModalSaving(true);
     try {
       await inspectionService.updateSize(editing.id, v.zona, v.panjang_mm, v.lebar_mm);
+      riwayat.catatUbah(
+        editing.id,
+        { zona: editing.zona, panjang_mm: editing.panjang_mm, lebar_mm: editing.lebar_mm },
+        { zona: v.zona, panjang_mm: v.panjang_mm, lebar_mm: v.lebar_mm },
+      );
       if (v.buktiFile) {
         await inspectionService.uploadBukti(editing.id, v.buktiFile);
       }
@@ -211,6 +221,41 @@ export default function NewInspectionPage() {
       setModalSaving(false);
     }
   }
+
+  /** Urungkan / Ulangi tambah & ubah indikasi (salah klik di gambar, salah isi ukuran). */
+  async function handleRiwayat(arah: 'undo' | 'redo') {
+    setError(null);
+    try {
+      const pesan = await (arah === 'undo' ? riwayat.urungkan() : riwayat.ulangi());
+      if (pesan) {
+        dispatch(selectIndication(null));
+        toast.success(pesan);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal mengurungkan/mengulangi.');
+    }
+  }
+
+  // Ctrl+Z / Ctrl+Y (atau Ctrl+Shift+Z) saat pemetaan, kecuali sedang mengetik atau ada modal terbuka
+  const modalTerbuka = addPos !== null || editing !== null || buktiView !== null;
+  useEffect(() => {
+    if (step !== 2 || modalTerbuka) return;
+    function onKey(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
+      const k = e.key.toLowerCase();
+      if (k === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        void handleRiwayat('undo');
+      } else if (k === 'y' || (k === 'z' && e.shiftKey)) {
+        e.preventDefault();
+        void handleRiwayat('redo');
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  });
 
   async function handleCalculate() {
     if (componentId === null) return;
@@ -512,6 +557,33 @@ export default function NewInspectionPage() {
                       focusRequest={focusReq}
                       showHint={false}
                       toolbarExtra={
+                        <>
+                        <button
+                          type="button"
+                          onClick={() => void handleRiwayat('undo')}
+                          disabled={!riwayat.canUndo}
+                          title="Urungkan tambah/ubah indikasi terakhir (Ctrl+Z)"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-ndt-border bg-white px-2.5 py-1 text-sm font-medium text-ndt-text hover:bg-ndt-primary-light disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M9 14 4 9l5-5" />
+                            <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+                          </svg>
+                          Urungkan
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleRiwayat('redo')}
+                          disabled={!riwayat.canRedo}
+                          title="Ulangi langkah yang diurungkan (Ctrl+Y)"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-ndt-border bg-white px-2.5 py-1 text-sm font-medium text-ndt-text hover:bg-ndt-primary-light disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="m15 14 5-5-5-5" />
+                            <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+                          </svg>
+                          Ulangi
+                        </button>
                         <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-ndt-border bg-white px-2.5 py-1 text-sm font-medium text-ndt-text hover:bg-ndt-primary-light" title="Ganti gambar drawing">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -521,6 +593,7 @@ export default function NewInspectionPage() {
                           Ganti Gambar
                           <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
                         </label>
+                        </>
                       }
                     />
                   </Suspense>

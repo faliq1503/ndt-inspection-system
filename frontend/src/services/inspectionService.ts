@@ -6,7 +6,7 @@
  * HANYA berisi endpoint yang benar-benar ada, tanpa asumsi.
  */
 
-import { API_URL, apiDownload, apiGet, apiPost, apiPut, apiUpload } from './api';
+import { API_URL, apiDelete, apiDownload, apiGet, apiPost, apiPut, apiUpload } from './api';
 import type {
   ComponentCreate,
   ComponentDetail,
@@ -61,9 +61,22 @@ export const inspectionService = {
   // --- Indication -----------------------------------------------
   addIndication(
     componentId: number,
-    payload: { zona: Zone; panjang_mm: number; lebar_mm: number; posisi_x: number | null; posisi_y: number | null },
+    payload: {
+      zona: Zone;
+      panjang_mm: number;
+      lebar_mm: number;
+      posisi_x: number | null;
+      posisi_y: number | null;
+      /** hanya saat mengembalikan indikasi lewat Ulangi */
+      bukti_path?: string | null;
+    },
   ): Promise<IdResponse> {
     return apiPost<IdResponse>(`/components/${componentId}/indications`, payload);
+  },
+
+  /** Hapus satu indikasi (dipakai Urungkan). Backend mengembalikan data yang dihapus. */
+  deleteIndication(indicationId: number): Promise<Indication> {
+    return apiDelete<Indication>(`/indications/${indicationId}`);
   },
 
   updatePosition(indicationId: number, posisi_x: number, posisi_y: number): Promise<Indication> {
