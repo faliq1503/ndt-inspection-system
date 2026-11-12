@@ -124,7 +124,8 @@ class IndikasiIn(BaseModel):
     lebar_mm: float = 0
     posisi_x: Optional[float] = None
     posisi_y: Optional[float] = None
-    # Hanya untuk mengembalikan indikasi yang dihapus lewat Urungkan (foto bukti lama dipakai lagi)
+    # Hanya untuk mengembalikan indikasi yang dihapus lewat Urungkan: id dan foto bukti lama dipakai lagi
+    id: Optional[int] = None
     bukti_path: Optional[str] = None
 
 
@@ -271,13 +272,15 @@ def add_indication(component_id: int, data: IndikasiIn):
         or not os.path.isfile(os.path.join(IMAGES_DIR, bukti))
     ):
         raise HTTPException(status_code=400, detail="Foto bukti tidak valid")
+    if data.id is not None and ambil_indikasi_by_id(data.id) is not None:
+        raise HTTPException(status_code=409, detail="Indikasi dengan id tersebut sudah ada")
 
     new_id = tambah_indikasi(
-        component_id, data.zona, data.panjang_mm, data.lebar_mm, data.posisi_x, data.posisi_y
+        component_id, data.zona, data.panjang_mm, data.lebar_mm, data.posisi_x, data.posisi_y, data.id
     )
     if bukti:
         simpan_bukti_path(new_id, bukti)
-    return {"id": new_id, **data.dict()}
+    return {**data.dict(), "id": new_id}
 
 
 @app.get("/indications/count")
@@ -406,6 +409,7 @@ def export_pdf(
     result_id: int,
     ttd_prepared: str = Query("", max_length=60),
     ttd_approved: str = Query("", max_length=60),
+    ttd_jabatan_approved: str = Query("", max_length=60),
     user: dict = Depends(get_current_user),
 ):
     hasil = ambil_hasil_by_id(result_id)
@@ -417,7 +421,7 @@ def export_pdf(
     gambar = comp["gambar_path"] if comp else None
     path = generate_pdf_report(result_id, hasil, indikasi_list, gambar_filename=gambar,
                                dicetak_oleh=user["username"],
-                               ttd=tanda_tangan(ttd_prepared, ttd_approved))
+                               ttd=tanda_tangan(ttd_prepared, ttd_approved, ttd_jabatan_approved))
 
     return FileResponse(path, media_type="application/pdf", filename=f"laporan_ndt_{hasil['nomor']}.pdf")
 
@@ -458,6 +462,7 @@ def export_excel(
     ids: Optional[str] = None,
     ttd_prepared: str = Query("", max_length=60),
     ttd_approved: str = Query("", max_length=60),
+    ttd_jabatan_approved: str = Query("", max_length=60),
     user: dict = Depends(get_current_user),
 ):
     """ids (opsional): daftar ID hasil dipisah koma, mis. "54,53,50" untuk export sesuai filter di halaman Riwayat."""
@@ -468,7 +473,7 @@ def export_excel(
         except ValueError:
             raise HTTPException(status_code=400, detail="Parameter ids tidak valid")
         data = [row for row in data if row["id"] in dipilih]
-    path = generate_excel_riwayat(data, dicetak_oleh=user["username"], ttd=tanda_tangan(ttd_prepared, ttd_approved))
+    path = generate_excel_riwayat(data, dicetak_oleh=user["username"], ttd=tanda_tangan(ttd_prepared, ttd_approved, ttd_jabatan_approved))
     return FileResponse(
         path,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

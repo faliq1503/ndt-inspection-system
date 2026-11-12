@@ -262,12 +262,14 @@ def simpan_gambar_path(component_id: int, gambar_path: str):
     conn.close()
 
 
-def tambah_indikasi(component_id: int, zona: str, panjang_mm: float, lebar_mm: float, posisi_x: float = None, posisi_y: float = None) -> int:
+def tambah_indikasi(component_id: int, zona: str, panjang_mm: float, lebar_mm: float, posisi_x: float = None, posisi_y: float = None,
+                    indication_id: int = None) -> int:
+    """indication_id diisi hanya saat mengembalikan indikasi yang dihapus, supaya nomor urutnya tetap."""
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO indication (component_id, zona, panjang_mm, lebar_mm, posisi_x, posisi_y) VALUES (?, ?, ?, ?, ?, ?)",
-        (component_id, zona, panjang_mm, lebar_mm, posisi_x, posisi_y),
+        "INSERT INTO indication (id, component_id, zona, panjang_mm, lebar_mm, posisi_x, posisi_y) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (indication_id, component_id, zona, panjang_mm, lebar_mm, posisi_x, posisi_y),
     )
     conn.commit()
     new_id = cur.lastrowid
@@ -278,7 +280,7 @@ def tambah_indikasi(component_id: int, zona: str, panjang_mm: float, lebar_mm: f
 def ambil_indikasi_by_component(component_id: int):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM indication WHERE component_id = ?", (component_id,))
+    cur.execute("SELECT * FROM indication WHERE component_id = ? ORDER BY id", (component_id,))
     rows = cur.fetchall()
     conn.close()
     return [dict(row) for row in rows]

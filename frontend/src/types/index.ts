@@ -136,4 +136,6 @@ export interface ManagedUser extends AuthUser {
 export interface TandaTanganIsian {
   prepared: string;
   approved: string;
+  /** jabatan di bawah APPROVED BY */
+  jabatanApproved: string;
 }

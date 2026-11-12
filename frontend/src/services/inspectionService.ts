@@ -20,7 +20,11 @@ import type {
 
 /** Nama tanda tangan untuk ekspor sebagai query string (kosong = diisi tangan). */
 function ttdQuery(ttd?: TandaTanganIsian): string {
-  return new URLSearchParams({ ttd_prepared: ttd?.prepared ?? '', ttd_approved: ttd?.approved ?? '' }).toString();
+  return new URLSearchParams({
+    ttd_prepared: ttd?.prepared ?? '',
+    ttd_approved: ttd?.approved ?? '',
+    ttd_jabatan_approved: ttd?.jabatanApproved ?? '',
+  }).toString();
 }
 
 interface IdResponse {
@@ -67,7 +71,8 @@ export const inspectionService = {
       lebar_mm: number;
       posisi_x: number | null;
       posisi_y: number | null;
-      /** hanya saat mengembalikan indikasi lewat Ulangi */
+      /** hanya saat mengembalikan indikasi yang dihapus: id dan foto bukti lama */
+      id?: number;
       bukti_path?: string | null;
     },
   ): Promise<IdResponse> {

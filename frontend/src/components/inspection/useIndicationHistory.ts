@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { inspectionService } from '../../services/inspectionService';
 import type { Indication, Zone } from '../../types/index';
 
@@ -8,27 +8,22 @@ export interface UkuranIndikasi {
   lebar_mm: number;
 }
 
-/**
- * Satu langkah yang bisa diurungkan. `key` = id indikasi saat pertama dibuat;
- * id di database berubah setiap indikasi dikembalikan lewat Ulangi.
- */
+/** Satu langkah yang bisa diurungkan. Indikasi yang dikembalikan memakai id yang sama. */
 type Langkah =
-  | { jenis: 'tambah'; key: number; data?: Indication }
-  | { jenis: 'ubah'; key: number; sebelum: UkuranIndikasi; sesudah: UkuranIndikasi };
+  | { jenis: 'tambah'; id: number; data?: Indication }
+  | { jenis: 'hapus'; id: number; data: Indication }
+  | { jenis: 'ubah'; id: number; sebelum: UkuranIndikasi; sesudah: UkuranIndikasi };
 
 /**
- * Urungkan/Ulangi untuk tambah dan ubah indikasi pada satu komponen.
+ * Urungkan/Ulangi untuk tambah, hapus, dan ubah indikasi pada satu komponen.
  * Riwayat hanya hidup selama halaman terbuka dan dikosongkan saat komponen berganti.
  */
 export function useIndicationHistory(componentId: number | null, refresh: () => Promise<void>) {
   const [undoStack, setUndoStack] = useState<Langkah[]>([]);
   const [redoStack, setRedoStack] = useState<Langkah[]>([]);
   const [busy, setBusy] = useState(false);
-  const keyToId = useRef(new Map<number, number>());
-  const idToKey = useRef(new Map<number, number>());
 
-  // Komponen berganti: riwayat lama tidak berlaku. Peta id tidak perlu dikosongkan
-  // karena id indikasi unik di seluruh database.
+  // Komponen berganti: riwayat lama tidak berlaku
   const [pemilik, setPemilik] = useState(componentId);
   if (pemilik !== componentId) {
     setPemilik(componentId);
@@ -36,16 +31,13 @@ export function useIndicationHistory(componentId: number | null, refresh: () => 
     setRedoStack([]);
   }
 
-  const idSekarang = (key: number) => keyToId.current.get(key) ?? key;
-  const keyDari = (id: number) => idToKey.current.get(id) ?? id;
-
   function catat(langkah: Langkah) {
     setUndoStack((s) => [...s, langkah]);
     setRedoStack([]);
   }
 
   function catatTambah(id: number) {
-    catat({ jenis: 'tambah', key: keyDari(id) });
+    catat({ jenis: 'tambah', id });
   }
 
   function catatUbah(id: number, sebelum: UkuranIndikasi, sesudah: UkuranIndikasi) {
@@ -53,34 +45,53 @@ export function useIndicationHistory(componentId: number | null, refresh: () => 
       sebelum.zona === sesudah.zona &&
       sebelum.panjang_mm === sesudah.panjang_mm &&
       sebelum.lebar_mm === sesudah.lebar_mm;
-    if (!sama) catat({ jenis: 'ubah', key: keyDari(id), sebelum, sesudah });
+    if (!sama) catat({ jenis: 'ubah', id, sebelum, sesudah });
+  }
+
+  /** Hapus indikasi; data terakhir (termasuk foto bukti) disimpan supaya bisa dikembalikan utuh. */
+  function hapusId(id: number): Promise<Indication> {
+    return inspectionService.deleteIndication(id);
+  }
+
+  /** Buat ulang indikasi yang pernah dihapus dengan id, posisi, dan foto bukti yang sama (nomor urut tetap). */
+  async function buatUlang(data: Indication | undefined) {
+    if (componentId === null || !data) throw new Error('Data indikasi untuk dikembalikan tidak tersedia.');
+    await inspectionService.addIndication(componentId, {
+      zona: data.zona,
+      panjang_mm: data.panjang_mm,
+      lebar_mm: data.lebar_mm,
+      posisi_x: data.posisi_x,
+      posisi_y: data.posisi_y,
+      id: data.id,
+      bukti_path: data.bukti_path,
+    });
   }
 
   /** Jalankan langkah ke arah undo/redo; mengembalikan langkah yang diperbarui untuk tumpukan seberang. */
   async function terapkan(l: Langkah, arah: 'undo' | 'redo'): Promise<Langkah> {
     if (l.jenis === 'ubah') {
       const u = arah === 'undo' ? l.sebelum : l.sesudah;
-      await inspectionService.updateSize(idSekarang(l.key), u.zona, u.panjang_mm, u.lebar_mm);
+      await inspectionService.updateSize(l.id, u.zona, u.panjang_mm, u.lebar_mm);
       return l;
     }
-    if (arah === 'undo') {
-      // Simpan data terakhir (termasuk foto bukti) supaya Ulangi mengembalikannya utuh
-      const data = await inspectionService.deleteIndication(idSekarang(l.key));
-      return { ...l, data };
-    }
-    if (componentId === null || !l.data) throw new Error('Data indikasi untuk Ulangi tidak tersedia.');
-    const created = await inspectionService.addIndication(componentId, {
-      zona: l.data.zona,
-      panjang_mm: l.data.panjang_mm,
-      lebar_mm: l.data.lebar_mm,
-      posisi_x: l.data.posisi_x,
-      posisi_y: l.data.posisi_y,
-      bukti_path: l.data.bukti_path,
-    });
-    idToKey.current.delete(idSekarang(l.key));
-    keyToId.current.set(l.key, created.id);
-    idToKey.current.set(created.id, l.key);
+    // tambah dibatalkan = hapus; hapus dibatalkan = buat ulang
+    const menghapus = (l.jenis === 'tambah') === (arah === 'undo');
+    if (menghapus) return { ...l, data: await hapusId(l.id) };
+    await buatUlang(l.data);
     return l;
+  }
+
+  /** Hapus satu indikasi dari tabel; tercatat sehingga bisa diurungkan. */
+  async function hapus(id: number) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const data = await hapusId(id);
+      catat({ jenis: 'hapus', id, data });
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function jalankan(arah: 'undo' | 'redo'): Promise<string | null> {
@@ -98,6 +109,9 @@ export function useIndicationHistory(componentId: number | null, refresh: () => 
       if (langkah.jenis === 'tambah') {
         return arah === 'undo' ? 'Penambahan indikasi diurungkan.' : 'Indikasi dikembalikan.';
       }
+      if (langkah.jenis === 'hapus') {
+        return arah === 'undo' ? 'Indikasi yang dihapus dikembalikan.' : 'Indikasi dihapus lagi.';
+      }
       return arah === 'undo' ? 'Perubahan indikasi diurungkan.' : 'Perubahan indikasi diterapkan lagi.';
     } finally {
       setBusy(false);
@@ -110,6 +124,7 @@ export function useIndicationHistory(componentId: number | null, refresh: () => 
     busy,
     catatTambah,
     catatUbah,
+    hapus,
     urungkan: () => jalankan('undo'),
     ulangi: () => jalankan('redo'),
   };

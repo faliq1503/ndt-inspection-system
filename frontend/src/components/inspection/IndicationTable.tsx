@@ -10,6 +10,8 @@ interface Props {
   hideActions?: boolean;
   /** Ikon lihat foto bukti (hanya tampil pada baris yang punya bukti). */
   onViewBukti?: (ind: Indication) => void;
+  /** Ikon hapus per indikasi (hanya saat pemetaan). */
+  onDelete?: (ind: Indication, nomor: number) => void;
 }
 
 /**
@@ -18,9 +20,16 @@ interface Props {
  * Kolom Luas Bond dan % juga dari backend (GET /components/:id),
  * dihitung per-indikasi terhadap luas zonanya masing-masing; null
  * sebelum komponen pernah di-calculate.
- * Delete belum tersedia karena backend tidak memiliki endpoint-nya.
  */
-export default function IndicationTable({ items, selectedId, onSelect, onEdit, hideActions = false, onViewBukti }: Props) {
+export default function IndicationTable({
+  items,
+  selectedId,
+  onSelect,
+  onEdit,
+  hideActions = false,
+  onViewBukti,
+  onDelete,
+}: Props) {
   if (items.length === 0) {
     return <p className="py-4 text-center text-sm text-ndt-muted">Belum ada indikasi.</p>;
   }
@@ -100,6 +109,24 @@ export default function IndicationTable({ items, selectedId, onSelect, onEdit, h
                       >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                        </svg>
+                      </button>
+                    )}
+                    {!hideActions && onDelete && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(ind, i + 1);
+                        }}
+                        title={`Hapus indikasi #${i + 1}`}
+                        aria-label={`Hapus indikasi #${i + 1}`}
+                        className="rounded-md p-1.5 text-ndt-danger hover:bg-ndt-danger/10"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                         </svg>
                       </button>
                     )}

@@ -32,12 +32,18 @@ TANDA_TANGAN = [
 ]
 
 
-def tanda_tangan(prepared: str = "", approved: str = "") -> list:
-    """TANDA_TANGAN dengan nama PREPARED BY dan APPROVED BY diisi saat ekspor (kosong = diisi tangan)."""
+def tanda_tangan(prepared: str = "", approved: str = "", jabatan_approved: str = "") -> list:
+    """TANDA_TANGAN dengan nama PREPARED BY, nama APPROVED BY, dan jabatan APPROVED BY
+    diisi saat ekspor (kosong = diisi tangan)."""
     nama_isian = [prepared, None, approved]  # None = nama tetap dari TANDA_TANGAN
+    jabatan_isian = [None, None, jabatan_approved]
     return [
-        (judul, jabatan, nama if isian is None else isian.strip().upper())
-        for (judul, jabatan, nama), isian in zip(TANDA_TANGAN, nama_isian)
+        (
+            judul,
+            jabatan if jab is None else (jab.strip().upper() or jabatan),
+            nama if isian is None else isian.strip().upper(),
+        )
+        for (judul, jabatan, nama), isian, jab in zip(TANDA_TANGAN, nama_isian, jabatan_isian)
     ]
 
 NAMA_BULAN = [

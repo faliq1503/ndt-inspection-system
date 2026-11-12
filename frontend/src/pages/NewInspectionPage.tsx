@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/common/Button';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import ErrorState from '../components/common/ErrorState';
 import Input from '../components/common/Input';
 import { useToast } from '../components/common/toastContext';
@@ -56,6 +57,7 @@ export default function NewInspectionPage() {
   const [modalSaving, setModalSaving] = useState(false);
   const [buktiView, setBuktiView] = useState<{ url: string; nomor: number } | null>(null);
   const [focusReq, setFocusReq] = useState<{ id: number; nonce: number } | null>(null);
+  const [hapusTarget, setHapusTarget] = useState<{ ind: Indication; nomor: number } | null>(null);
   const riwayat = useIndicationHistory(componentId, () =>
     componentId !== null ? refreshComponent(componentId) : Promise.resolve(),
   );
@@ -222,7 +224,22 @@ export default function NewInspectionPage() {
     }
   }
 
-  /** Urungkan / Ulangi tambah & ubah indikasi (salah klik di gambar, salah isi ukuran). */
+  async function handleHapus() {
+    if (hapusTarget === null) return;
+    const { ind, nomor } = hapusTarget;
+    setError(null);
+    try {
+      await riwayat.hapus(ind.id);
+      if (selectedId === ind.id) dispatch(selectIndication(null));
+      toast.success(`Indikasi #${nomor} dihapus. Tekan Urungkan (Ctrl+Z) untuk mengembalikan.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menghapus indikasi.');
+    } finally {
+      setHapusTarget(null);
+    }
+  }
+
+  /** Urungkan / Ulangi tambah, ubah & hapus indikasi (salah klik di gambar, salah isi ukuran). */
   async function handleRiwayat(arah: 'undo' | 'redo') {
     setError(null);
     try {
@@ -237,7 +254,7 @@ export default function NewInspectionPage() {
   }
 
   // Ctrl+Z / Ctrl+Y (atau Ctrl+Shift+Z) saat pemetaan, kecuali sedang mengetik atau ada modal terbuka
-  const modalTerbuka = addPos !== null || editing !== null || buktiView !== null;
+  const modalTerbuka = addPos !== null || editing !== null || buktiView !== null || hapusTarget !== null;
   useEffect(() => {
     if (step !== 2 || modalTerbuka) return;
     function onKey(e: KeyboardEvent) {
@@ -562,7 +579,7 @@ export default function NewInspectionPage() {
                           type="button"
                           onClick={() => void handleRiwayat('undo')}
                           disabled={!riwayat.canUndo}
-                          title="Urungkan tambah/ubah indikasi terakhir (Ctrl+Z)"
+                          title="Urungkan tambah/ubah/hapus indikasi terakhir (Ctrl+Z)"
                           className="inline-flex items-center gap-1.5 rounded-md border border-ndt-border bg-white px-2.5 py-1 text-sm font-medium text-ndt-text hover:bg-ndt-primary-light disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -639,6 +656,7 @@ export default function NewInspectionPage() {
                   setAddPos(null);
                   setEditing(ind);
                 }}
+                onDelete={(ind, nomor) => setHapusTarget({ ind, nomor })}
                 onViewBukti={(ind) => {
                   const url = ind.bukti_path ? inspectionService.imageUrl(ind.bukti_path) : null;
                   if (!url) return;
@@ -727,6 +745,16 @@ export default function NewInspectionPage() {
           onSubmit={handleEditSubmit}
         />
       )}
+
+      <ConfirmDialog
+        open={hapusTarget !== null}
+        title={`Hapus indikasi #${hapusTarget?.nomor ?? ''}?`}
+        message="Titik dan ukurannya dihapus dari pemetaan. Masih bisa dikembalikan dengan tombol Urungkan selama halaman ini terbuka."
+        confirmLabel="Hapus"
+        loading={riwayat.busy}
+        onConfirm={() => void handleHapus()}
+        onCancel={() => setHapusTarget(null)}
+      />
 
       {buktiView && (
         <Modal
