@@ -6,6 +6,7 @@ import Loading from '../components/common/Loading';
 import StatusBadge, { Badge } from '../components/common/StatusBadge';
 import IndicationTable from '../components/inspection/IndicationTable';
 import Modal from '../components/common/Modal';
+import TandaTanganModal from '../components/common/TandaTanganModal';
 import CriteriaComparison from '../components/inspection/CriteriaComparison';
 import IndicationTotals from '../components/inspection/IndicationTotals';
 import { inspectionService } from '../services/inspectionService';
@@ -57,6 +58,7 @@ export default function DetailPage() {
   const [showMarkers, setShowMarkers] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [buktiView, setBuktiView] = useState<{ url: string; nomor: number } | null>(null);
+  const [showTtd, setShowTtd] = useState(false);
   const drawingRef = useRef<HTMLElement>(null);
 
   function load() {
@@ -215,12 +217,7 @@ export default function DetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              setDlError(null);
-              inspectionService
-                .downloadReportPdf(result.id, result.nomor)
-                .catch((err: unknown) => setDlError(err instanceof Error ? err.message : 'Gagal mengunduh PDF.'));
-            }}
+            onClick={() => setShowTtd(true)}
             className="inline-flex items-center gap-1.5 rounded-md bg-ndt-primary px-4 py-2 text-sm font-medium text-white hover:bg-ndt-primary-dark"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -530,6 +527,20 @@ export default function DetailPage() {
         </div>
         <IndicationTotals result={result} indications={indications} />
       </section>
+
+      {showTtd && (
+        <TandaTanganModal
+          title={`Ekspor PDF Inspeksi #${result.nomor}`}
+          onClose={() => setShowTtd(false)}
+          onSubmit={(ttd) => {
+            setShowTtd(false);
+            setDlError(null);
+            inspectionService
+              .downloadReportPdf(result.id, result.nomor, ttd)
+              .catch((err: unknown) => setDlError(err instanceof Error ? err.message : 'Gagal mengunduh PDF.'));
+          }}
+        />
+      )}
 
       {buktiView && (
         <Modal

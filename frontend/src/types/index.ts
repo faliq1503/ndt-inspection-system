@@ -132,3 +132,8 @@ export interface AuthUser {
 export interface ManagedUser extends AuthUser {
   dibuat_pada: string;
 }
+/** Nama tanda tangan yang diisi saat ekspor; kosong = kolom dibiarkan untuk diisi tangan. */
+export interface TandaTanganIsian {
+  prepared: string;
+  approved: string;
+}

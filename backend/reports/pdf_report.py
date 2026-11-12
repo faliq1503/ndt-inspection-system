@@ -13,6 +13,7 @@ Konten kop & tanda tangan ada di reports/kop_pln.py.
 
 import os
 import tempfile
+from xml.sax.saxutils import escape
 from datetime import datetime, timedelta
 
 from PIL import Image as PILImage, ImageDraw, ImageFont
@@ -27,7 +28,8 @@ from reportlab.platypus import (
 )
 
 from reports.kop_pln import (
-    KOP_BARIS, LOGO_PATH, NAMA_SISTEM, STANDAR_ACUAN, TANDA_TANGAN, format_tanggal_indo,
+    KOP_BARIS, LOGO_PATH, NAMA_SISTEM, STANDAR_ACUAN, format_tanggal_indo,
+    tanda_tangan,
     label_status,
 )
 
@@ -392,29 +394,29 @@ def _blok_indikasi(indikasi_list, styles):
     return [judul, tabel, Spacer(1, 1.5 * mm), Paragraph(ringkas, styles["catatan"]), Spacer(1, 8 * mm)]
 
 
-def _blok_tanda_tangan(styles):
+def _blok_tanda_tangan(ttd, styles):
     """Kolom tanda tangan, sama dengan footer Excel (PREPARED / CHECKED / APPROVED BY)."""
     jarak = 8 * mm
     lebar_kotak = (LEBAR_ISI - 2 * jarak) / 3
     baris = [[], [], [], []]
-    for judul, jabatan, nama in TANDA_TANGAN:
+    for judul, jabatan, nama in ttd:
         for isi in (baris[0], baris[1], baris[2], baris[3]):
             if isi:
                 isi.append("")
         baris[0].append(Paragraph(judul, styles["ttd"]))
         baris[1].append(Paragraph(jabatan, styles["ttd"]))
         baris[2].append("")
-        baris[3].append(Paragraph(f"<u><b>{nama}</b></u>", styles["ttd"]) if nama else "")
+        baris[3].append(Paragraph(f"<u><b>{escape(nama)}</b></u>", styles["ttd"]) if nama else "")
 
     lebar = []
-    for i in range(len(TANDA_TANGAN)):
+    for i in range(len(ttd)):
         if i:
             lebar.append(jarak)
         lebar.append(lebar_kotak)
 
     tabel = Table(baris, colWidths=lebar, rowHeights=[None, None, 20 * mm, 9 * mm])
     gaya = [("VALIGN", (0, 0), (-1, -1), "MIDDLE")]
-    for i in range(len(TANDA_TANGAN)):
+    for i in range(len(ttd)):
         c = i * 2
         gaya += [
             ("BOX", (c, 0), (c, 1), 0.6, colors.black),
@@ -516,7 +518,7 @@ def _gambar_mapping(gambar_filename: str | None, indikasi_list: list) -> str | N
 
 def generate_pdf_report(result_id: int, hasil: dict, indikasi_list: list,
                         gambar_filename: str | None = None, dicetak_oleh: str = "",
-                        waktu_cetak: datetime | None = None) -> str:
+                        waktu_cetak: datetime | None = None, ttd: list | None = None) -> str:
     os.makedirs(REPORTS_DIR, exist_ok=True)
     path = os.path.join(REPORTS_DIR, f"laporan_{result_id}.pdf")
     waktu_cetak = waktu_cetak or datetime.now()
@@ -539,7 +541,7 @@ def generate_pdf_report(result_id: int, hasil: dict, indikasi_list: list,
     try:
         elements += _blok_mapping(mapping_tmp, gambar_filename, styles)
         elements += _blok_indikasi(indikasi_list, styles)
-        elements += _blok_tanda_tangan(styles)
+        elements += _blok_tanda_tangan(ttd or tanda_tangan(), styles)
 
         class _Canvas(_CanvasBernomor):
             teks_kiri = (f"{NAMA_SISTEM} - Laporan Inspeksi #{nomor} - "

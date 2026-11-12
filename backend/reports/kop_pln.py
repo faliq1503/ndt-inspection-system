@@ -31,6 +31,15 @@ TANDA_TANGAN = [
     ("APPROVED BY", "", ""),
 ]
 
+
+def tanda_tangan(prepared: str = "", approved: str = "") -> list:
+    """TANDA_TANGAN dengan nama PREPARED BY dan APPROVED BY diisi saat ekspor (kosong = diisi tangan)."""
+    nama_isian = [prepared, None, approved]  # None = nama tetap dari TANDA_TANGAN
+    return [
+        (judul, jabatan, nama if isian is None else isian.strip().upper())
+        for (judul, jabatan, nama), isian in zip(TANDA_TANGAN, nama_isian)
+    ]
+
 NAMA_BULAN = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni",
     "Juli", "Agustus", "September", "Oktober", "November", "Desember",

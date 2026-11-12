@@ -14,8 +14,14 @@ import type {
   Indication,
   ResultRow,
   Standard,
+  TandaTanganIsian,
   Zone,
 } from '../types/index';
+
+/** Nama tanda tangan untuk ekspor sebagai query string (kosong = diisi tangan). */
+function ttdQuery(ttd?: TandaTanganIsian): string {
+  return new URLSearchParams({ ttd_prepared: ttd?.prepared ?? '', ttd_approved: ttd?.approved ?? '' }).toString();
+}
 
 interface IdResponse {
   id: number;
@@ -92,14 +98,15 @@ export const inspectionService = {
     return apiGet<ResultRow[]>('/results');
   },
 
-  downloadReportPdf(resultId: number, nomor: number = resultId): Promise<void> {
-    return apiDownload(`/results/${resultId}/report/pdf`, `laporan_ndt_${nomor}.pdf`);
+  downloadReportPdf(resultId: number, nomor: number = resultId, ttd?: TandaTanganIsian): Promise<void> {
+    return apiDownload(`/results/${resultId}/report/pdf?${ttdQuery(ttd)}`, `laporan_ndt_${nomor}.pdf`);
   },
 
   /** resultIds diisi = export hanya baris tersebut (sesuai filter di halaman Riwayat). */
-  downloadExcel(resultIds?: number[]): Promise<void> {
-    const query = resultIds ? `?ids=${resultIds.join(',')}` : '';
-    return apiDownload(`/results/export/excel${query}`, 'riwayat_hasil_ndt.xlsx');
+  downloadExcel(resultIds?: number[], ttd?: TandaTanganIsian): Promise<void> {
+    const query = new URLSearchParams(ttdQuery(ttd));
+    if (resultIds) query.set('ids', resultIds.join(','));
+    return apiDownload(`/results/export/excel?${query}`, 'riwayat_hasil_ndt.xlsx');
   },
 
   bulkDeleteResults(resultIds: number[]): Promise<{ deleted_components: number }> {
