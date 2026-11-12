@@ -9,8 +9,9 @@ import { useToast } from '../components/common/toastContext';
 import Loading from '../components/common/Loading';
 import PercentValue from '../components/common/PercentValue';
 import StatusBadge from '../components/common/StatusBadge';
+import TandaTanganModal from '../components/common/TandaTanganModal';
 import { inspectionService } from '../services/inspectionService';
-import type { EvaluationStatus, ResultRow } from '../types/index';
+import type { EvaluationStatus, ResultRow, TandaTanganIsian } from '../types/index';
 import { formatShortDate, parseDbDate } from '../utils/format';
 
 const PAGE_SIZE = 10;
@@ -170,6 +171,10 @@ export default function HistoryPage() {
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [dlError, setDlError] = useState<string | null>(null);
+  /** Ekspor yang menunggu isian nama tanda tangan. */
+  const [exportTarget, setExportTarget] = useState<
+    { jenis: 'pdf'; id: number; nomor: number } | { jenis: 'excel' } | null
+  >(null);
   const [deleteTarget, setDeleteTarget] = useState<ResultRow | null>(null);
   const [deleting, setDeleting] = useState(false);
   const toast = useToast();
@@ -267,11 +272,11 @@ export default function HistoryPage() {
   }
 
   /** Export PDF backend (reportlab) untuk satu baris inspeksi. */
-  async function handleExportPdf(resultId: number, nomor: number) {
+  async function handleExportPdf(resultId: number, nomor: number, ttd: TandaTanganIsian) {
     setDlError(null);
     setDownloadingId(resultId);
     try {
-      await inspectionService.downloadReportPdf(resultId, nomor);
+      await inspectionService.downloadReportPdf(resultId, nomor, ttd);
     } catch (err) {
       setDlError(err instanceof Error ? err.message : 'Gagal mengunduh PDF.');
     } finally {
@@ -280,16 +285,23 @@ export default function HistoryPage() {
   }
 
   /** Export Excel: kalau ada filter aktif, hanya baris yang sedang tampil (urutan sesuai tabel). */
-  async function handleExportExcel() {
+  async function handleExportExcel(ttd: TandaTanganIsian) {
     setDlError(null);
     setExportingExcel(true);
     try {
-      await inspectionService.downloadExcel(isFiltered ? filtered.map((r) => r.id) : undefined);
+      await inspectionService.downloadExcel(isFiltered ? filtered.map((r) => r.id) : undefined, ttd);
     } catch (err) {
       setDlError(err instanceof Error ? err.message : 'Gagal mengunduh Excel.');
     } finally {
       setExportingExcel(false);
     }
+  }
+
+  function handleSubmitTtd(ttd: TandaTanganIsian) {
+    const target = exportTarget;
+    setExportTarget(null);
+    if (target?.jenis === 'pdf') void handleExportPdf(target.id, target.nomor, ttd);
+    else if (target?.jenis === 'excel') void handleExportExcel(ttd);
   }
 
   if (loading) return <Loading label="Memuat riwayat inspeksi..." />;
@@ -304,7 +316,7 @@ export default function HistoryPage() {
         </div>
         <button
           type="button"
-          onClick={handleExportExcel}
+          onClick={() => setExportTarget({ jenis: 'excel' })}
           disabled={exportingExcel || filtered.length === 0}
           title={isFiltered ? 'Ekspor hanya data yang sesuai filter' : 'Ekspor semua riwayat'}
           className="inline-flex items-center gap-1.5 rounded-md border border-ndt-border bg-white px-3 py-2 text-sm font-medium text-ndt-text hover:bg-ndt-primary-light disabled:opacity-50"
@@ -469,7 +481,7 @@ export default function HistoryPage() {
                       <StatusBadge status={r.status} />
                     </td>
                     <td className="py-1">
-                      <RowActions r={r} downloadingId={downloadingId} onExportPdf={handleExportPdf} onDelete={setDeleteTarget} />
+                      <RowActions r={r} downloadingId={downloadingId} onExportPdf={(id, nomor) => setExportTarget({ jenis: 'pdf', id, nomor })} onDelete={setDeleteTarget} />
                     </td>
                   </tr>
                 ))}
@@ -532,7 +544,7 @@ export default function HistoryPage() {
                     </div>
                   </dl>
                   <div className="mt-2 flex justify-end border-t border-ndt-border pt-2">
-                    <RowActions r={r} downloadingId={downloadingId} onExportPdf={handleExportPdf} onDelete={setDeleteTarget} />
+                    <RowActions r={r} downloadingId={downloadingId} onExportPdf={(id, nomor) => setExportTarget({ jenis: 'pdf', id, nomor })} onDelete={setDeleteTarget} />
                   </div>
                 </li>
               ))}
@@ -593,6 +605,13 @@ export default function HistoryPage() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
+      {exportTarget && (
+        <TandaTanganModal
+          title={exportTarget.jenis === 'pdf' ? `Ekspor PDF Inspeksi #${exportTarget.nomor}` : 'Ekspor Excel Riwayat'}
+          onClose={() => setExportTarget(null)}
+          onSubmit={handleSubmitTtd}
+        />
+      )}
     </div>
   );
 }

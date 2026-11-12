@@ -12,7 +12,7 @@ import os
 import shutil
 import uuid
 
-from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile, File
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, UploadFile, File
 from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from api.auth import bearer_scheme, get_current_user, require_admin, router as auth_router
 
-from core.config import CORS_ORIGINS, IMAGES_DIR
+from core.config import API_DOCS, CORS_ORIGINS, IMAGES_DIR
 from core.calculations import hitung_bond_dan_persen_individual
 from core.evaluation import evaluasi_komponen
 from core.models import Standard
@@ -52,6 +52,7 @@ from db.database import (
 )
 from reports.pdf_report import generate_pdf_report
 from reports.excel_report import generate_excel_riwayat
+from reports.kop_pln import tanda_tangan
 
 PUBLIC_PATHS = {"/", "/auth/login"}
 
@@ -66,7 +67,13 @@ def enforce_login(
     get_current_user(cred)
 
 
-app = FastAPI(title="NDT Mapping API", dependencies=[Depends(enforce_login)])
+app = FastAPI(
+    title="NDT Mapping API",
+    dependencies=[Depends(enforce_login)],
+    docs_url="/docs" if API_DOCS else None,
+    redoc_url="/redoc" if API_DOCS else None,
+    openapi_url="/openapi.json" if API_DOCS else None,
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -372,7 +379,12 @@ def get_results():
 
 
 @app.get("/results/{result_id}/report/pdf")
-def export_pdf(result_id: int, user: dict = Depends(get_current_user)):
+def export_pdf(
+    result_id: int,
+    ttd_prepared: str = Query("", max_length=60),
+    ttd_approved: str = Query("", max_length=60),
+    user: dict = Depends(get_current_user),
+):
     hasil = ambil_hasil_by_id(result_id)
     if hasil is None:
         raise HTTPException(status_code=404, detail="Hasil tidak ditemukan")
@@ -381,7 +393,8 @@ def export_pdf(result_id: int, user: dict = Depends(get_current_user)):
     comp = ambil_component_by_id(hasil["comp_id"])
     gambar = comp["gambar_path"] if comp else None
     path = generate_pdf_report(result_id, hasil, indikasi_list, gambar_filename=gambar,
-                               dicetak_oleh=user["username"])
+                               dicetak_oleh=user["username"],
+                               ttd=tanda_tangan(ttd_prepared, ttd_approved))
 
     return FileResponse(path, media_type="application/pdf", filename=f"laporan_ndt_{hasil['nomor']}.pdf")
 
@@ -418,7 +431,12 @@ def bulk_delete_results(data: BulkDeleteIn, _: dict = Depends(get_current_user))
     }
 
 @app.get("/results/export/excel")
-def export_excel(ids: Optional[str] = None, user: dict = Depends(get_current_user)):
+def export_excel(
+    ids: Optional[str] = None,
+    ttd_prepared: str = Query("", max_length=60),
+    ttd_approved: str = Query("", max_length=60),
+    user: dict = Depends(get_current_user),
+):
     """ids (opsional): daftar ID hasil dipisah koma, mis. "54,53,50" untuk export sesuai filter di halaman Riwayat."""
     data = ambil_semua_hasil()
     if ids is not None:
@@ -427,7 +445,7 @@ def export_excel(ids: Optional[str] = None, user: dict = Depends(get_current_use
         except ValueError:
             raise HTTPException(status_code=400, detail="Parameter ids tidak valid")
         data = [row for row in data if row["id"] in dipilih]
-    path = generate_excel_riwayat(data, dicetak_oleh=user["username"])
+    path = generate_excel_riwayat(data, dicetak_oleh=user["username"], ttd=tanda_tangan(ttd_prepared, ttd_approved))
     return FileResponse(
         path,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -19,8 +19,8 @@ from openpyxl.drawing.image import Image as XLImage
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 from reports.kop_pln import (
-    KOP_BARIS, LOGO_PATH, NAMA_SISTEM, PELAKSANA, STANDAR_ACUAN, TANDA_TANGAN,
-    format_tanggal_indo, label_status,
+    KOP_BARIS, LOGO_PATH, NAMA_SISTEM, PELAKSANA, STANDAR_ACUAN,
+    format_tanggal_indo, label_status, tanda_tangan,
 )
 
 from core.config import REPORTS_DIR
@@ -164,10 +164,10 @@ def _tulis_tabel(ws, data: list) -> int:
 KOLOM_TANDA_TANGAN = [(1, 4), (7, 10), (13, 16)]
 
 
-def _tulis_footer(ws, baris_awal: int):
+def _tulis_footer(ws, baris_awal: int, ttd: list):
     """Kolom tanda tangan PREPARED / CHECKED / APPROVED (sesuai format PLN)."""
     tengah = Alignment(horizontal="center", vertical="center")
-    for (judul, jabatan, nama), (kolom_awal, kolom_akhir) in zip(TANDA_TANGAN, KOLOM_TANDA_TANGAN):
+    for (judul, jabatan, nama), (kolom_awal, kolom_akhir) in zip(ttd, KOLOM_TANDA_TANGAN):
         # Baris 1: judul, baris 2: jabatan, baris 3-6: ruang tanda tangan, baris 7-8: nama
         bagian = [
             (baris_awal, baris_awal, judul),
@@ -188,7 +188,8 @@ def _tulis_footer(ws, baris_awal: int):
         _kotak(ws, baris_awal + 6, kolom_awal, baris_awal + 7, kolom_akhir)
 
 
-def generate_excel_riwayat(data: list, dicetak_oleh: str = "", waktu_cetak: datetime | None = None) -> str:
+def generate_excel_riwayat(data: list, dicetak_oleh: str = "", waktu_cetak: datetime | None = None,
+                           ttd: list | None = None) -> str:
     os.makedirs(REPORTS_DIR, exist_ok=True)
     path = os.path.join(REPORTS_DIR, "riwayat_hasil_ndt.xlsx")
     waktu_cetak = waktu_cetak or datetime.now()
@@ -202,7 +203,7 @@ def generate_excel_riwayat(data: list, dicetak_oleh: str = "", waktu_cetak: date
 
     _tulis_header(ws, data, dicetak_oleh, waktu_cetak)
     baris_terakhir = _tulis_tabel(ws, data)
-    _tulis_footer(ws, baris_terakhir + 2)
+    _tulis_footer(ws, baris_terakhir + 2, ttd or tanda_tangan())
 
     # Pengaturan cetak: landscape, muat 1 halaman lebar, header tabel diulang tiap halaman
     ws.page_setup.orientation = "landscape"
