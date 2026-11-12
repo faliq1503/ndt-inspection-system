@@ -330,6 +330,14 @@ def ambil_indikasi_by_id(indication_id: int):
     return dict(row) if row else None
 
 
+def hapus_indikasi(indication_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM indication WHERE id = ?", (indication_id,))
+    conn.commit()
+    conn.close()
+
+
 def simpan_bukti_path(indication_id: int, bukti_path: str):
     conn = get_connection()
     cur = conn.cursor()
